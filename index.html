@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #1a202c;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+        .nav-link { transition: all 0.2s; }
+        .nav-link.active { background-color: #4263eb; color: white; }
+        .table-row.selected { background-color: rgba(237, 242, 255, 1); }
+        .modal { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .modal.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; }
+        .ai-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; background-color: #e0e7ff; color: #4338ca; transition: background-color 0.2s; }
+        .ai-btn:hover:not(:disabled) { background-color: #c7d2fe; }
+        .ai-btn:disabled { background-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+        .ai-btn .spinner { display: none; width: 1rem; height: 1rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+        .ai-btn.loading .spinner { display: block; }
+        .ai-btn.loading span { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #image-preview-container.loading::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.7); z-index: 10; }
+        #image-preview-container.loading::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 2rem; height: 2rem; border: 4px solid #4338ca; border-right-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; z-index: 20; }
+        .filter-tile { transition: all 0.2s ease-in-out; border: 1px solid #e5e7eb; background-color: #ffffff; cursor: pointer; }
+        .filter-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #d1d5db; }
+        .filter-tile.selected { background-color: #4f46e5; color: white; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        .filter-tile.selected svg { color: white; }
+        .menu-item-card { transition: transform 0.3s, opacity 0.3s; animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .quantity-stepper { display: flex; align-items: center; justify-content: space-between; width: 100%; background-color: #4f46e5; color: white; font-semibold; border-radius: 0.5rem; }
+        .quantity-stepper button { font-size: 1.25rem; width: 40px; padding: 0.5rem 0; }
+        .progress-bar-container { background-color: #e5e7eb; border-radius: 9999px; overflow: hidden; }
+        .progress-bar { background-color: #4f46e5; height: 100%; transition: width 0.5s linear; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        .kot-card { cursor: grab; }
+        .kot-card.dragging { opacity: 0.5; cursor: grabbing; }
+        .kot-card.drag-over { border: 2px dashed #4f46e5; }
+        .chat-bubble { max-width: 80%; }
+        .chat-bubble-user { background-color: #4f46e5; color: white; }
+        .chat-bubble-agent { background-color: #e5e7eb; color: #1f2937; }
+        .typing-indicator span { height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="container mx-auto max-w-7xl">
+        <!-- Navigation -->
+        <nav class="glass-panel rounded-full p-2 flex items-center gap-2 mb-8">
+            <button id="nav-menu" onclick="showPage('menu-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full">Menu</button>
+            <button id="nav-my-orders" onclick="showPage('my-orders-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full">My Orders</button>
+            <button id="nav-kot" onclick="showPage('kot-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full hidden">KOT</button>
+            <button id="nav-admin" onclick="showPage('admin-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full hidden">Menu Management</button>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="page-container">
+            <!-- Customer Menu Page -->
+            <div id="menu-page" class="page hidden">
+                <header class="mb-8 text-center">
+                    <div class="flex justify-center items-center gap-4">
+                        <button id="standard-menu-toggle" onclick="toggleStandardMenu()" class="bg-white text-gray-800 font-semibold py-2 px-6 rounded-full shadow-sm border border-gray-300 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h4a1 1 0 100-2H7zm0 4a1 1 0 100 2h4a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                            <span>View Standard Menu</span>
+                        </button>
+                        <button id="chat-agent-btn" onclick="openChatAgent()" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-full shadow-sm flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.08-3.239A8.962 8.962 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM4.72 14.28A7 7 0 0010 16a7 7 0 007-7c0-3.309-2.69-6-6-6S4 6.691 4 10c0 .603.092 1.18.26 1.721L4.72 14.28z" clip-rule="evenodd" /></svg>
+                            <span>Chat with Agent</span>
+                        </button>
+                    </div>
+                </header>
+                <div id="filter-section" class="glass-panel rounded-2xl p-6 mb-8 space-y-6"></div>
+                <main id="customer-menu-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></main>
+            </div>
+
+            <!-- My Orders Page (Customer) -->
+            <div id="my-orders-page" class="page hidden">
+                 <main id="my-orders-list" class="space-y-4"></main>
+            </div>
+            
+            <!-- KOT Page (Kitchen) -->
+            <div id="kot-page" class="page hidden">
+                 <main id="kot-list" class="flex flex-col gap-4"></main>
+            </div>
+
+            <!-- Admin Page (Menu Management) -->
+            <div id="admin-page" class="page hidden">
+                <header class="mb-8">
+                    <div class="flex items-center gap-3">
+                        <button onclick="openEditModal()" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition transform hover:scale-105">Add New Item</button>
+                        <div id="selection-actions" class="flex gap-3">
+                            <button id="delete-selected-btn" onclick="openDeleteConfirmModal()" class="hidden bg-red-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-red-700 transition transform hover:scale-105">Delete Selected</button>
+                            <button id="ai-desc-selected-btn" onclick="generateAiForAllSelectedDescriptions()" class="hidden bg-purple-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-purple-700 transition transform hover:scale-105">AI Descriptions</button>
+                            <button id="ai-img-selected-btn" onclick="generateAiForAllSelectedImages()" class="hidden bg-purple-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-purple-700 transition transform hover:scale-105">AI Images</button>
+                        </div>
+                    </div>
+                </header>
+                <main class="glass-panel rounded-2xl overflow-hidden">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="border-b-2 border-gray-200 bg-white/50">
+                                <tr>
+                                    <th class="p-4 w-12"><input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this.checked)" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"></th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Prep Time</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Price</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-menu-table-body"></tbody>
+                        </table>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating My Order Button -->
+    <button id="cart-btn" onclick="openOrderReviewPopup()" class="hidden fixed bottom-8 right-8 bg-blue-600 text-white pl-4 pr-6 h-16 rounded-full shadow-lg flex items-center justify-center transform hover:scale-105 transition-transform gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+        <span class="font-semibold">My Order</span>
+        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">0</span>
+    </button>
+
+    <!-- Modals -->
+    <div id="order-review-popup" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-md relative">
+            <button onclick="closeOrderReviewPopup()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            <h2 id="order-review-title" class="text-2xl font-bold mb-6 text-gray-800">Your Order</h2>
+            <div id="order-items-list" class="space-y-4 max-h-64 overflow-y-auto pr-2"></div>
+            <div id="order-empty-state" class="text-center py-8 text-gray-600 hidden">Your cart is empty.</div>
+            <div class="border-t-2 border-gray-200 mt-6 pt-4 space-y-2">
+                <div class="flex justify-between font-semibold text-lg"><span class="text-gray-600">Total:</span><span id="order-total">₹0</span></div>
+            </div>
+            <div id="order-review-actions" class="mt-6 space-y-3"></div>
+        </div>
+    </div>
+    <div id="chef-message-popup" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-md relative">
+            <button onclick="closeChefMessagePopup()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Special Instructions</h2>
+            <p class="text-gray-600 mb-4">Add a message for the chef (optional).</p>
+            <textarea id="chef-message-input" class="w-full p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="e.g., make it extra spicy, no onions..."></textarea>
+            <div class="mt-6"><button onclick="confirmOrder(true)" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">Confirm Final Order</button></div>
+        </div>
+    </div>
+    <div id="edit-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-2xl relative">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            <h2 id="edit-modal-title" class="text-2xl font-bold mb-6 text-gray-800">Add New Item</h2>
+            <form id="edit-item-form" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="flex flex-col">
+                    <div id="image-preview-container" class="relative w-full h-56 bg-gray-200 rounded-lg mb-4 flex items-center justify-center overflow-hidden"><img id="image-preview" src="" alt="Image preview" class="hidden w-full h-full object-cover"><span id="image-placeholder" class="text-gray-500">Image Preview</span></div>
+                    <div class="flex gap-2"><button type="button" onclick="document.getElementById('imageUpload').click()" class="w-full text-center bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition">Upload</button><input type="file" id="imageUpload" class="hidden" accept="image/*" onchange="handleImageUpload(event)"><button type="button" id="ai-generate-image-btn" onclick="generateAiImage()" class="ai-btn w-full justify-center !py-2 !px-4 !rounded-lg"><div class="spinner"></div><span>✨ AI Generate</span></button></div>
+                </div>
+                <div class="space-y-4"><input type="hidden" id="editItemId"><div><label for="editItemName" class="font-semibold text-gray-700">Name</label><input required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="text" id="editItemName" placeholder="Dish Name"></div><div><div class="flex justify-between items-center"><label for="editItemDesc" class="font-semibold text-gray-700">Description</label><button type="button" id="ai-generate-desc-btn" onclick="generateAiDescription()" class="ai-btn"><div class="spinner"></div><span>✨ AI Generate</span></button></div><textarea required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" id="editItemDesc" placeholder="A delicious description..." rows="3"></textarea></div><div><label for="editItemPrepTime" class="font-semibold text-gray-700">Prep Time (minutes)</label><input required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="number" id="editItemPrepTime" placeholder="e.g., 15"></div><div><label for="editItemPrice" class="font-semibold text-gray-700">Price</label><input required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="number" id="editItemPrice" placeholder="Price (₹)"></div><input type="hidden" id="editItemImage"><div class="text-right pt-4"><button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Save Changes</button></div></div>
+            </form>
+        </div>
+    </div>
+    <div id="delete-confirm-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Are you sure?</h2>
+            <p class="text-gray-600 mb-6">You are about to delete <strong id="delete-count"></strong> item(s). This action cannot be undone.</p>
+            <div class="flex justify-center gap-4"><button onclick="closeDeleteConfirmModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">Cancel</button><button onclick="deleteItems()" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Delete</button></div>
+        </div>
+    </div>
+     <div id="cancel-confirm-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Cancel Order?</h2>
+            <p class="text-gray-600 mb-6">Are you sure you want to cancel this order?</p>
+            <div class="flex justify-center gap-4"><button onclick="closeCancelConfirmModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">No</button><button id="confirm-cancel-btn" onclick="" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Yes, Cancel</button></div>
+        </div>
+    </div>
+    <div id="chat-agent-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl w-full max-w-lg flex flex-col" style="height: 70vh;">
+            <header class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800">AI Food Recommender</h2>
+                <button onclick="closeChatAgent()" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            </header>
+            <main id="chat-messages" class="flex-1 p-4 space-y-4 overflow-y-auto"></main>
+            <footer class="p-4 border-t border-gray-200">
+                <form id="chat-form" class="flex items-center gap-2">
+                    <input id="chat-input" type="text" class="w-full p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Ask for a recommendation..." autocomplete="off">
+                    <button type="submit" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                    </button>
+                </form>
+            </footer>
+        </div>
+    </div>
+
+
+    <script>
+        // --- AUTH SIMULATION ---
+        const isUserAdmin = true;
+        const currentUserId = 'user123'; // Simulate a logged-in user
+
+        // --- DATA ---
+        let menu = [
+            { id: 1, name: "Classic Bruschetta", price: 300, image: "https://images.unsplash.com/photo-1505253716362-afb74b626351?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Toasted bread with tomatoes, garlic, and basil.", prepTime: 10, tags: { hunger: 'snack', cuisine: 'Italian', type: 'starter', taste: 'savory' } },
+            { id: 2, name: "Garlic Bread", price: 250, image: "https://images.unsplash.com/photo-1627308595182-4c9da33e_578e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Warm bread with garlic butter and herbs.", prepTime: 8, tags: { hunger: 'snack', cuisine: 'Italian', type: 'starter', taste: 'savory' } },
+            { id: 3, name: "Margherita Pizza", price: 450, image: "https://images.unsplash.com/photo-1598021680133-eb-a16c12142?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Classic pizza with tomato, mozzarella, and basil.", prepTime: 20, tags: { hunger: 'large', cuisine: 'Italian', type: 'main', taste: 'creamy' } },
+            { id: 4, name: "Pasta Arrabiata", price: 400, image: "https://images.unsplash.com/photo-1621996346565-e326a222a222?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Spicy tomato sauce pasta.", prepTime: 15, tags: { hunger: 'medium', cuisine: 'Italian', type: 'main', taste: 'spicy' } },
+            { id: 5, name: "Vegetable Lasagna", price: 500, image: "https://images.unsplash.com/photo-1619895092593-0fe2491ab0a7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Layered pasta with vegetables and cheese.", prepTime: 25, tags: { hunger: 'large', cuisine: 'Italian', type: 'main', taste: 'creamy' } },
+            { id: 7, name: "Paneer Tikka", price: 450, image: "", description: "Grilled cottage cheese skewers.", prepTime: 18, tags: { hunger: 'medium', cuisine: 'Indian', type: 'starter', taste: 'spicy' } },
+            { id: 8, name: "Sizzling Brownie", price: 350, image: "https://images.unsplash.com/photo-1610513320995-1ad4b187524b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Warm chocolate brownie with ice cream.", prepTime: 12, tags: { hunger: 'snack', cuisine: 'Continental', type: 'dessert', taste: 'sweet' } },
+            { id: 9, name: "Mango Lassi", price: 180, image: "https://images.unsplash.com/photo-1626803364127-040034133534?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Refreshing yogurt-based mango smoothie.", prepTime: 5, tags: { hunger: 'snack', cuisine: 'Indian', type: 'juice', taste: 'sweet' } }
+        ];
+
+        let kot = []; // Kitchen Order Tickets
+        let currentOrder = [];
+        let editingOrder = null; // To hold the order being edited
+        let tempEditingItems = []; // Temporary copy of items for editing
+        let selectedItems = [];
+        let itemsToDelete = [];
+        let currentFilters = { hunger: null, cuisine: null, type: null, taste: null };
+        let standardMenuView = false;
+
+        // DOM Elements
+        const pages = document.querySelectorAll('.page');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const tableBody = document.getElementById('admin-menu-table-body');
+        const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+        const aiDescSelectedBtn = document.getElementById('ai-desc-selected-btn');
+        const aiImgSelectedBtn = document.getElementById('ai-img-selected-btn');
+        const editModal = document.getElementById('edit-modal');
+        const editModalTitle = document.getElementById('edit-modal-title');
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const cancelConfirmModal = document.getElementById('cancel-confirm-modal');
+        const editItemForm = document.getElementById('edit-item-form');
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        const imagePreview = document.getElementById('image-preview');
+        const imagePlaceholder = document.getElementById('image-placeholder');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const customerMenuList = document.getElementById('customer-menu-list');
+        const filterSection = document.getElementById('filter-section');
+        const standardMenuToggle = document.getElementById('standard-menu-toggle');
+        const cartBtn = document.getElementById('cart-btn');
+        const cartCount = document.getElementById('cart-count');
+        const orderReviewPopup = document.getElementById('order-review-popup');
+        const orderItemsList = document.getElementById('order-items-list');
+        const orderTotalEl = document.getElementById('order-total');
+        const orderEmptyState = document.getElementById('order-empty-state');
+        const orderReviewActions = document.getElementById('order-review-actions');
+        const orderReviewTitle = document.getElementById('order-review-title');
+        const myOrdersList = document.getElementById('my-orders-list');
+        const kotList = document.getElementById('kot-list');
+        const chefMessagePopup = document.getElementById('chef-message-popup');
+        const chefMessageInput = document.getElementById('chef-message-input');
+        const chatAgentModal = document.getElementById('chat-agent-modal');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        // --- NAVIGATION & PAGE LOGIC ---
+        function showPage(pageId) {
+            pages.forEach(page => page.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+            navLinks.forEach(link => link.classList.remove('active'));
+            const activeLink = document.getElementById(`nav-${pageId.replace('-page', '')}`);
+            if(activeLink) activeLink.classList.add('active');
+            cartBtn.classList.toggle('hidden', pageId !== 'menu-page');
+            if (pageId === 'my-orders-page') renderMyOrders();
+            if (pageId === 'kot-page') renderKOT();
+        }
+
+        // --- CUSTOMER MENU LOGIC ---
+        const filterOptions = {
+            hunger: { name: 'How Hungry Are You?', options: [{ value: 'snack', label: 'Light Bite', icon: '🥨' }, { value: 'medium', label: 'Just Right', icon: '🍛' }, { value: 'large', label: 'Famished!', icon: '🍽️' }] },
+            cuisine: { name: 'Choose Your Cuisine', options: [{ value: 'Indian', label: 'Indian', icon: '🇮🇳' }, { value: 'Italian', label: 'Italian', icon: '🇮🇹' }, { value: 'Continental', label: 'Continental', icon: '🌍' }] },
+            type: { name: 'Select a Course', options: [{ value: 'starter', label: 'Starters', icon: ' appetizers' }, { value: 'main', label: 'Main Course', icon: '🍱' }, { value: 'dessert', label: 'Desserts', icon: '🍰' }, { value: 'juice', label: 'Beverages', icon: '🍹' }] },
+            taste: { name: 'What\'s Your Flavor?', options: [{ value: 'savory', label: 'Savory', icon: '🧀' }, { value: 'spicy', label: 'Spicy', icon: '🌶️' }, { value: 'creamy', label: 'Creamy', icon: '🍦' }, { value: 'sweet', label: 'Sweet', icon: '🍬' }] }
+        };
+
+        function renderFilters() {
+            filterSection.innerHTML = '';
+            for (const key in filterOptions) {
+                const { name, options } = filterOptions[key];
+                let optionsHTML = options.map(opt => `<button class="filter-tile flex flex-col items-center justify-center text-center p-4 rounded-xl" onclick="applyFilter('${key}', '${opt.value}')" data-value="${opt.value}"><div class="text-3xl">${opt.icon}</div><span class="font-semibold mt-2 text-sm">${opt.label}</span></button>`).join('');
+                filterSection.innerHTML += `<div><h3 class="font-bold text-lg mb-3 text-gray-700">${name}</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="filter-group-${key}">${optionsHTML}</div></div>`;
+            }
+        }
+
+        function applyFilter(key, value) {
+            const btnGroup = document.getElementById(`filter-group-${key}`);
+            currentFilters[key] = (currentFilters[key] === value) ? null : value;
+            Array.from(btnGroup.children).forEach(btn => btn.classList.toggle('selected', btn.dataset.value === currentFilters[key]));
+            renderCustomerMenu();
+        }
+
+        function renderCustomerMenu() {
+            customerMenuList.innerHTML = '';
+            let filteredMenu = standardMenuView ? menu : menu.filter(item => Object.keys(currentFilters).every(key => currentFilters[key] === null || item.tags[key] === currentFilters[key]));
+            if (filteredMenu.length === 0) {
+                customerMenuList.innerHTML = `<p class="text-gray-600 col-span-full text-center py-10">No dishes match your criteria. Try adjusting your filters!</p>`;
+            } else {
+                filteredMenu.forEach(item => {
+                    const itemInOrder = currentOrder.find(orderItem => orderItem.id === item.id);
+                    const quantity = itemInOrder ? itemInOrder.quantity : 0;
+                    const orderButtonHTML = quantity > 0
+                        ? `<div class="quantity-stepper"><button onclick="updateQuantityOnCard(${item.id}, -1)">-</button><span>${quantity}</span><button onclick="updateQuantityOnCard(${item.id}, 1)">+</button></div>`
+                        : `<button onclick="addToOrder(${item.id})" class="w-full bg-blue-500 text-white font-semibold py-2 rounded-lg hover:bg-blue-600 transition">Add to Order</button>`;
+                    
+                    customerMenuList.innerHTML += `<div class="menu-item-card bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col"><img src="${item.image || 'https://placehold.co/600x400/e2e8f0/2d3748?text=Image'}" alt="${item.name}" class="w-full h-40 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/2d3748?text=Image+Not+Found';"><div class="p-4 flex flex-col flex-grow"><div class="flex justify-between items-start"><h3 class="text-lg font-bold text-gray-800">${item.name}</h3><p class="text-lg font-semibold text-blue-600">₹${item.price}</p></div><p class="text-gray-600 text-sm mt-2 flex-grow">${item.description}</p><div class="mt-4">${orderButtonHTML}</div></div></div>`;
+                });
+            }
+        }
+        
+        function toggleStandardMenu() {
+            standardMenuView = !standardMenuView;
+            filterSection.classList.toggle('hidden', standardMenuView);
+            standardMenuToggle.querySelector('span').textContent = standardMenuView ? 'Filter Your Cravings' : 'View Standard Menu';
+            standardMenuToggle.classList.toggle('bg-blue-100', standardMenuView);
+            renderCustomerMenu();
+        }
+
+        // --- ORDERING LOGIC ---
+        function addToOrder(itemId) {
+            const existingItem = currentOrder.find(item => item.id === itemId);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                const menuItem = menu.find(item => item.id === itemId);
+                currentOrder.push({ ...menuItem, quantity: 1, status: 'Pending' });
+            }
+            updateCartCount();
+            renderCustomerMenu();
+        }
+        
+        function updateQuantityOnCard(itemId, change) {
+            const item = currentOrder.find(i => i.id === itemId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    currentOrder = currentOrder.filter(i => i.id !== itemId);
+                }
+            }
+            updateCartCount();
+            renderCustomerMenu();
+        }
+
+        function updateCartCount() {
+            const totalItems = currentOrder.reduce((sum, item) => sum + item.quantity, 0);
+            cartCount.textContent = totalItems;
+            cartBtn.classList.toggle('animate-pulse', totalItems > 0);
+        }
+
+        function openOrderReviewPopup(orderId = null) {
+            editingOrder = orderId ? kot.find(o => o.id === orderId) : null;
+            tempEditingItems = editingOrder ? JSON.parse(JSON.stringify(editingOrder.items)) : currentOrder;
+            
+            orderReviewTitle.textContent = editingOrder ? `Edit Order ${orderId}` : 'Your Order';
+            
+            renderOrderReviewItems();
+            
+            if (editingOrder) {
+                orderReviewActions.innerHTML = `<button onclick="updateOrder()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">Update Order</button>`;
+            } else {
+                 orderReviewActions.innerHTML = `<button onclick="confirmOrder()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">Confirm Order</button><button onclick="openChefMessagePopup()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Add Message to Chef</button>`;
+            }
+            orderReviewPopup.classList.remove('hidden');
+        }
+
+        function renderOrderReviewItems() {
+            const items = editingOrder ? tempEditingItems : currentOrder;
+            orderItemsList.innerHTML = '';
+            if (items.length === 0) {
+                orderEmptyState.classList.remove('hidden');
+                orderReviewActions.innerHTML = '';
+                orderTotalEl.textContent = '₹0';
+            } else {
+                orderEmptyState.classList.add('hidden');
+                let total = 0;
+                items.forEach(item => {
+                    total += item.price * item.quantity;
+                    const isZero = item.quantity === 0;
+                    orderItemsList.innerHTML += `<div class="flex items-center justify-between ${isZero ? 'opacity-50' : ''}"><div class="flex items-center gap-3"><img src="${item.image || 'https://placehold.co/100x100/e2e8f0/2d3748?text=Img'}" class="w-12 h-12 rounded-md object-cover" onerror="this.onerror=null;this.src='https://placehold.co/100x100/e2e8f0/2d3748?text=Img';"><div><p class="font-semibold">${item.name}</p><p class="text-sm text-gray-600">₹${item.price}</p></div></div><div class="flex items-center gap-3"><button ${isZero ? 'disabled' : ''} onclick="updateQuantityInPopup(${item.id}, -1)" class="font-bold text-xl w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300">-</button><span class="font-semibold w-8 text-center">${item.quantity}</span><button onclick="updateQuantityInPopup(${item.id}, 1)" class="font-bold text-xl w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300">+</button></div></div>`;
+                });
+                orderTotalEl.textContent = `₹${total}`;
+            }
+        }
+
+        function closeOrderReviewPopup() {
+            editingOrder = null;
+            tempEditingItems = [];
+            orderReviewPopup.classList.add('hidden');
+        }
+
+        function updateQuantityInPopup(itemId, change) {
+            const items = editingOrder ? tempEditingItems : currentOrder;
+            let item = items.find(i => i.id === itemId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity < 0) item.quantity = 0;
+            } else if (change > 0) {
+                const menuItem = menu.find(i => i.id === itemId);
+                if(menuItem) items.push({ ...menuItem, quantity: 1 });
+            }
+            
+            renderOrderReviewItems();
+            if (!editingOrder) {
+                updateCartCount();
+                renderCustomerMenu();
+            }
+        }
+
+        function openChefMessagePopup() {
+            if (currentOrder.length === 0) return;
+            chefMessagePopup.classList.remove('hidden');
+        }
+
+        function closeChefMessagePopup() {
+            chefMessagePopup.classList.add('hidden');
+        }
+
+        function confirmOrder(withMessage = false) {
+            if (currentOrder.length === 0) return;
+            
+            const totalPrepTimeInQueue = kot.filter(o => o.status === 'Received' || o.status === 'Preparing').reduce((total, order) => total + order.totalPrepTime, 0);
+            const orderTotalPrepTime = currentOrder.reduce((sum, item) => sum + (item.prepTime * item.quantity), 0);
+
+            const newOrder = {
+                id: `ORD-${Date.now().toString().slice(-5)}`,
+                userId: currentUserId,
+                items: JSON.parse(JSON.stringify(currentOrder)),
+                total: currentOrder.reduce((sum, item) => sum + item.price * item.quantity, 0),
+                timestamp: new Date(),
+                status: 'Received',
+                message: withMessage ? chefMessageInput.value : '',
+                totalPrepTime: orderTotalPrepTime,
+                expectedReadyTime: new Date(Date.now() + (totalPrepTimeInQueue + orderTotalPrepTime) * 60000)
+            };
+            kot.push(newOrder); // Add to the end of the queue
+            currentOrder = [];
+            chefMessageInput.value = '';
+            updateCartCount();
+            closeOrderReviewPopup();
+            closeChefMessagePopup();
+            renderCustomerMenu();
+            showToast(`Order ${newOrder.id} confirmed!`);
+        }
+        
+        function updateOrder() {
+            if (!editingOrder) return;
+            editingOrder.items = tempEditingItems.filter(item => item.quantity > 0);
+            editingOrder.total = editingOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            editingOrder.totalPrepTime = editingOrder.items.reduce((sum, item) => sum + (item.prepTime * item.quantity), 0);
+            if (editingOrder.items.length === 0) {
+                editingOrder.status = 'Cancelled';
+            }
+            closeOrderReviewPopup();
+            renderMyOrders();
+            showToast(`Order ${editingOrder.id} updated!`);
+        }
+
+        // --- MY ORDERS PAGE LOGIC ---
+        function renderMyOrders() {
+            myOrdersList.innerHTML = '';
+            const myConfirmedOrders = kot.filter(o => o.userId === currentUserId).sort((a,b) => b.timestamp - a.timestamp);
+
+            if (myConfirmedOrders.length === 0) {
+                myOrdersList.innerHTML = `<div class="glass-panel rounded-2xl p-8 text-center"><p class="text-gray-600">You haven't placed any orders yet.</p></div>`;
+                return;
+            }
+            
+            const receivedOrdersQueue = kot.filter(o => o.status === 'Received');
+
+            myConfirmedOrders.forEach(order => {
+                const itemsHtml = order.items.map(item => `<div class="flex items-center justify-between bg-gray-100 p-2 rounded-lg text-sm"><span>${item.quantity} x ${item.name}</span>${order.status === 'Received' ? `<button onclick="cancelOrderItem('${order.id}', ${item.id})" class="text-red-500 font-bold text-lg">&times;</button>` : ''}</div>`).join('');
+                const statusColors = { 'Received': 'bg-orange-100 text-orange-800', 'Preparing': 'bg-blue-100 text-blue-800', 'Ready': 'bg-green-100 text-green-800', 'Cancelled': 'bg-red-100 text-red-800' };
+                const actionsHtml = order.status === 'Received' ? `<div class="flex gap-2 mt-4"><button onclick="editOrder('${order.id}')" class="text-xs bg-blue-100 text-blue-700 font-semibold px-3 py-1 rounded-full">Edit</button><button onclick="openCancelConfirmModal('${order.id}')" class="text-xs bg-red-100 text-red-700 font-semibold px-3 py-1 rounded-full">Cancel</button></div>` : '';
+                
+                let statusInfoHtml = '';
+                if (order.status === 'Preparing') {
+                    const timeRemaining = Math.max(0, Math.round((order.expectedReadyTime - Date.now()) / 1000));
+                    const minutes = Math.floor(timeRemaining / 60);
+                    const seconds = timeRemaining % 60;
+                    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    const totalDuration = order.totalPrepTime * 60;
+                    const timeElapsed = totalDuration - timeRemaining;
+                    const progress = totalDuration > 0 ? Math.min(100, (timeElapsed / totalDuration) * 100) : 0;
+                    statusInfoHtml = `<div><div class="flex justify-between text-xs font-semibold text-gray-500 mb-1"><span>Preparing...</span><span>Est. Time to Table</span></div><div class="progress-bar-container h-2 w-full"><div class="progress-bar" style="width: ${progress}%"></div></div><div class="text-right text-xs font-semibold text-gray-500 mt-1"><span class="countdown">${timeString}</span></div></div>`;
+                } else if (order.status === 'Received') {
+                    const queuePosition = receivedOrdersQueue.findIndex(o => o.id === order.id) + 1;
+                    statusInfoHtml = `<div class="text-sm text-gray-600 font-semibold">Queue Position: <span class="text-blue-600 font-bold text-base">#${queuePosition}</span></div>`;
+                }
+
+                myOrdersList.innerHTML += `<div class="glass-panel rounded-2xl p-4 space-y-3" id="my-order-card-${order.id}"><div class="flex justify-between items-center"><span class="font-bold text-lg">${order.id}</span><span class="px-3 py-1 text-sm font-semibold rounded-full ${statusColors[order.status]}">${order.status}</span></div>${statusInfoHtml}<div class="space-y-2">${itemsHtml}</div>${order.message ? `<div class="mt-2 text-sm text-purple-800 bg-purple-100 p-2 rounded-md"><strong class="block">Your Note:</strong><textarea onchange="updateChefNote('${order.id}', this.value)" ${order.status !== 'Received' ? 'disabled' : ''} class="w-full bg-transparent border-0 focus:ring-0 p-0">${order.message}</textarea></div>` : ''}<div class="text-right">${actionsHtml}</div></div>`;
+            });
+        }
+        
+        function openCancelConfirmModal(orderId) {
+            const confirmBtn = document.getElementById('confirm-cancel-btn');
+            confirmBtn.onclick = () => confirmCancelOrder(orderId);
+            cancelConfirmModal.classList.remove('hidden');
+        }
+        
+        function closeCancelConfirmModal() {
+            cancelConfirmModal.classList.add('hidden');
+        }
+
+        function confirmCancelOrder(orderId) {
+            const order = kot.find(o => o.id === orderId);
+            if (order && order.status === 'Received') {
+                order.status = 'Cancelled';
+                renderMyOrders();
+            }
+            closeCancelConfirmModal();
+        }
+        
+        function cancelOrderItem(orderId, itemId) {
+            const order = kot.find(o => o.id === orderId);
+            if (order && order.status === 'Received') {
+                order.items = order.items.filter(item => item.id !== itemId);
+                if (order.items.length === 0) {
+                    order.status = 'Cancelled';
+                }
+                renderMyOrders();
+            }
+        }
+        
+        function editOrder(orderId) {
+            openOrderReviewPopup(orderId);
+        }
+        
+        function updateChefNote(orderId, newMessage) {
+            const order = kot.find(o => o.id === orderId);
+            if (order && order.status === 'Received') {
+                order.message = newMessage;
+            }
+        }
+
+        // --- KOT PAGE LOGIC ---
+        function renderKOT() {
+            kotList.innerHTML = '';
+            const activeKots = kot.filter(o => o.status === 'Received' || o.status === 'Preparing');
+            if (activeKots.length === 0) {
+                kotList.innerHTML = `<div class="glass-panel rounded-2xl p-8 text-center col-span-full"><p class="text-gray-600">No active orders.</p></div>`;
+                return;
+            }
+            activeKots.forEach(order => {
+                const itemsHtml = order.items.map(item => `<p class="font-medium">${item.quantity} x ${item.name}</p>`).join('');
+                const statusColors = { 'Received': 'bg-orange-100 text-orange-800', 'Preparing': 'bg-blue-100 text-blue-800' };
+                const actionButton = order.status === 'Received' ? `<button onclick="startPreparing('${order.id}')" class="w-full mt-4 bg-green-500 text-white font-semibold py-2 rounded-lg hover:bg-green-600">Start Preparing</button>` : `<button onclick="markAsReady('${order.id}')" class="w-full mt-4 bg-blue-500 text-white font-semibold py-2 rounded-lg hover:bg-blue-600">Mark as Ready</button>`;
+                kotList.innerHTML += `<div class="kot-card glass-panel rounded-2xl p-6 flex flex-col" draggable="true" data-order-id="${order.id}" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event)"><div class="flex justify-between items-start"><div><h3 class="text-xl font-bold">${order.id}</h3><p class="text-sm text-gray-500">${order.timestamp.toLocaleTimeString()}</p></div><span class="px-3 py-1 text-sm font-semibold rounded-full ${statusColors[order.status]}">${order.status}</span></div><div class="mt-4 text-gray-700 flex-grow">${itemsHtml}</div>${order.message ? `<p class="mt-2 text-sm text-purple-800 bg-purple-100 p-2 rounded-md"><strong>Note:</strong> ${order.message}</p>` : ''}${actionButton}</div>`;
+            });
+        }
+        
+        function startPreparing(orderId) {
+            const order = kot.find(o => o.id === orderId);
+            if (order && order.status === 'Received') {
+                order.status = 'Preparing';
+                order.expectedReadyTime = new Date(Date.now() + order.totalPrepTime * 60000);
+                renderKOT();
+            }
+        }
+        
+        function markAsReady(orderId) {
+            const order = kot.find(o => o.id === orderId);
+            if (order && order.status === 'Preparing') {
+                order.status = 'Ready';
+                renderKOT();
+            }
+        }
+
+        // --- KOT DRAG & DROP LOGIC ---
+        function dragStart(event) {
+            event.dataTransfer.setData('text/plain', event.target.dataset.orderId);
+            event.target.classList.add('dragging');
+        }
+        function dragOver(event) {
+            event.preventDefault();
+            const targetCard = event.target.closest('.kot-card');
+            if (targetCard && !targetCard.classList.contains('dragging')) {
+                targetCard.classList.add('drag-over');
+            }
+        }
+        function dragLeave(event) {
+            const targetCard = event.target.closest('.kot-card');
+            if (targetCard) {
+                targetCard.classList.remove('drag-over');
+            }
+        }
+        function drop(event) {
+            event.preventDefault();
+            const draggedId = event.dataTransfer.getData('text/plain');
+            const targetCard = event.target.closest('.kot-card');
+            if (!targetCard || targetCard.dataset.orderId === draggedId) {
+                document.querySelectorAll('.kot-card').forEach(c => c.classList.remove('dragging', 'drag-over'));
+                return;
+            }
+            
+            const draggedOrderIndex = kot.findIndex(o => o.id === draggedId);
+            const targetOrderIndex = kot.findIndex(o => o.id === targetCard.dataset.orderId);
+
+            // Reorder the array
+            const [draggedOrder] = kot.splice(draggedOrderIndex, 1);
+            kot.splice(targetOrderIndex, 0, draggedOrder);
+            
+            renderKOT();
+        }
+
+        // --- KITCHEN SIMULATION & ETA UPDATE ---
+        setInterval(() => {
+            const now = Date.now();
+            let statusChanged = false;
+            kot.forEach(order => {
+                if(order.status === 'Preparing' && now > order.expectedReadyTime) {
+                    order.status = 'Ready';
+                    statusChanged = true;
+                }
+            });
+
+            if (document.getElementById('my-orders-page').classList.contains('hidden') === false) {
+                 renderMyOrders();
+            }
+            if(statusChanged) {
+                renderKOT();
+            }
+        }, 1000);
+
+        // --- ADMIN TABLE LOGIC ---
+        function renderAdminTable() { if (!tableBody) return; tableBody.innerHTML = ''; menu.forEach(item => { const isSelected = selectedItems.includes(item.id); const row = document.createElement('tr'); row.id = `item-${item.id}`; row.className = `table-row border-b border-gray-200 transition-colors ${isSelected ? 'selected' : ''}`; row.innerHTML = `<td class="p-4"><input type="checkbox" onchange="toggleItemSelection(${item.id})" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${isSelected ? 'checked' : ''}></td><td class="p-4"><div class="relative w-12 h-12">${item.image ? `<img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-md object-cover" onerror="this.onerror=null;this.src='https://placehold.co/100x100/e2e8f0/2d3748?text=Error';">` : `<div class="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Img</div>`}<div id="spinner-${item.id}" class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-md hidden"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div></div></td><td class="p-4 font-semibold text-gray-800">${item.name}</td><td class="p-4 text-gray-600 max-w-xs truncate" title="${item.description}">${item.description}</td><td class="p-4 text-gray-600">${item.prepTime} min</td><td class="p-4 font-semibold text-blue-600">₹${item.price}</td><td class="p-4 text-center"><div class="flex items-center justify-center gap-4"><button onclick="openEditModal(${item.id})" class="text-gray-500 hover:text-blue-600" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button onclick="openDeleteConfirmModal([${item.id}])" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></td>`; tableBody.appendChild(row); }); updateSelectAllCheckbox(); }
+        function toggleItemSelection(itemId) { if (selectedItems.includes(itemId)) { selectedItems = selectedItems.filter(id => id !== itemId); } else { selectedItems.push(itemId); } renderAdminTable(); updateActionButtons(); }
+        function toggleSelectAll(isChecked) { selectedItems = isChecked ? menu.map(item => item.id) : []; renderAdminTable(); updateActionButtons(); }
+        function updateSelectAllCheckbox() { if(selectAllCheckbox) { selectAllCheckbox.checked = menu.length > 0 && selectedItems.length === menu.length; } }
+        function updateActionButtons() { if(deleteSelectedBtn) { deleteSelectedBtn.classList.toggle('hidden', selectedItems.length === 0); aiDescSelectedBtn.classList.toggle('hidden', selectedItems.length < 1); aiImgSelectedBtn.classList.toggle('hidden', selectedItems.length < 1); } }
+        function openEditModal(itemId = null) { editItemForm.reset(); const isNew = itemId === null; editModalTitle.textContent = isNew ? 'Add New Item' : 'Edit Menu Item'; document.getElementById('editItemId').value = isNew ? '' : itemId; if (!isNew) { const item = menu.find(i => i.id === itemId); if (!item) return; document.getElementById('editItemName').value = item.name; document.getElementById('editItemDesc').value = item.description; document.getElementById('editItemPrepTime').value = item.prepTime; document.getElementById('editItemPrice').value = item.price; document.getElementById('editItemImage').value = item.image; updateImagePreview(item.image); } else { updateImagePreview(''); } editModal.classList.remove('hidden'); }
+        function closeEditModal() { editModal.classList.add('hidden'); }
+        editItemForm.addEventListener('submit', function(e) { e.preventDefault(); const itemId = parseInt(document.getElementById('editItemId').value); const itemData = { name: document.getElementById('editItemName').value, description: document.getElementById('editItemDesc').value, prepTime: parseInt(document.getElementById('editItemPrepTime').value), price: parseInt(document.getElementById('editItemPrice').value), image: document.getElementById('editItemImage').value, tags: {} }; if (itemId) { const itemIndex = menu.findIndex(i => i.id === itemId); if (itemIndex > -1) { menu[itemIndex] = { ...menu[itemIndex], ...itemData }; } } else { itemData.id = Date.now(); menu.push(itemData); } closeEditModal(); renderAdminTable(); });
+        function openDeleteConfirmModal(idsToDelete = null) { itemsToDelete = idsToDelete || selectedItems; if (itemsToDelete.length === 0) return; document.getElementById('delete-count').textContent = itemsToDelete.length; deleteConfirmModal.classList.remove('hidden'); }
+        function closeDeleteConfirmModal() { itemsToDelete = []; deleteConfirmModal.classList.add('hidden'); }
+        function deleteItems() { menu = menu.filter(item => !itemsToDelete.includes(item.id)); selectedItems = selectedItems.filter(id => !itemsToDelete.includes(id)); closeDeleteConfirmModal(); renderAdminTable(); updateActionButtons(); }
+        function updateImagePreview(src) { if (src) { imagePreview.src = src; imagePreview.classList.remove('hidden'); imagePlaceholder.classList.add('hidden'); } else { imagePreview.classList.add('hidden'); imagePlaceholder.classList.remove('hidden'); } }
+        function handleImageUpload(event) { const file = event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const imageUrl = e.target.result; document.getElementById('editItemImage').value = imageUrl; updateImagePreview(imageUrl); }; reader.readAsDataURL(file); } }
+        
+        // --- CHAT AGENT LOGIC ---
+        function openChatAgent() {
+            chatAgentModal.classList.remove('hidden');
+            if (chatMessages.children.length === 0) {
+                appendAgentMessage("Hello! How can I help you find the perfect dish today? You can tell me if you're looking for something spicy, vegetarian, a light snack, etc.");
+            }
+        }
+        function closeChatAgent() { chatAgentModal.classList.add('hidden'); }
+        chatForm.addEventListener('submit', (e) => { e.preventDefault(); sendChatMessage(); });
+        function appendUserMessage(message) {
+            chatMessages.innerHTML += `<div class="flex justify-end"><div class="chat-bubble chat-bubble-user rounded-lg p-3">${message}</div></div>`;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        function appendAgentMessage(message) {
+            chatMessages.innerHTML += `<div class="flex justify-start"><div class="chat-bubble chat-bubble-agent rounded-lg p-3">${message}</div></div>`;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        function showAgentTyping() {
+            chatMessages.innerHTML += `<div id="typing-indicator" class="flex justify-start"><div class="chat-bubble chat-bubble-agent rounded-lg p-3 typing-indicator"><span></span><span></span><span></span></div></div>`;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        function hideAgentTyping() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+        async function sendChatMessage() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+            appendUserMessage(userMessage);
+            chatInput.value = '';
+            showAgentTyping();
+
+            const prompt = `You are a helpful restaurant food recommender. A customer has the following request: "${userMessage}". Based on our menu, which is provided here as a JSON object, please suggest 1-3 suitable dishes. Explain why you are recommending them. Be friendly and conversational. Here is the menu: ${JSON.stringify(menu)}`;
+            
+            try {
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const result = await fetchWithBackoff(apiUrl, payload);
+                hideAgentTyping();
+                if (result.candidates && result.candidates[0].content.parts[0].text) {
+                    appendAgentMessage(result.candidates[0].content.parts[0].text);
+                } else {
+                    appendAgentMessage("I'm sorry, I couldn't come up with a suggestion right now. Please try asking in a different way.");
+                }
+            } catch (error) {
+                hideAgentTyping();
+                appendAgentMessage("I'm having a little trouble connecting to my brain right now. Please try again in a moment.");
+            }
+        }
+
+        // --- AI & API LOGIC ---
+        async function fetchWithBackoff(apiUrl, payload) { let delay = 1000; for (let i = 0; i < 5; i++) { try { const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (response.ok) return response.json(); } catch (error) { /* Ignore network errors for retry */ } await new Promise(resolve => setTimeout(resolve, delay)); delay *= 2; } throw new Error("API request failed after multiple retries."); }
+        async function generateAiDescription() { const dishName = document.getElementById('editItemName').value; const btn = document.getElementById('ai-generate-desc-btn'); if (!dishName) { showToast("Please enter a dish name first.", 'error'); return; } btn.classList.add('loading'); btn.disabled = true; try { const prompt = `Generate a short, appetizing menu description for a dish called '${dishName}'. Keep it under 20 words.`; const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] }; const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; const result = await fetchWithBackoff(apiUrl, payload); if (result.candidates && result.candidates[0].content.parts[0].text) { document.getElementById('editItemDesc').value = result.candidates[0].content.parts[0].text.trim(); } else { throw new Error("No description generated."); } } catch (error) { showToast("Failed to generate description.", 'error'); } finally { btn.classList.remove('loading'); btn.disabled = false; } }
+        async function generateAiImage() { const dishName = document.getElementById('editItemName').value; const btn = document.getElementById('ai-generate-image-btn'); if (!dishName) { showToast("Please enter a dish name first.", 'error'); return; } btn.classList.add('loading'); btn.disabled = true; imagePreviewContainer.classList.add('loading'); try { const prompt = `A photorealistic, professional food photography shot of '${dishName}', beautifully plated on a clean white background, ready for a restaurant menu.`; const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } }; const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`; const result = await fetchWithBackoff(apiUrl, payload); if (result.predictions && result.predictions[0].bytesBase64Encoded) { const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`; document.getElementById('editItemImage').value = imageUrl; updateImagePreview(imageUrl); } else { throw new Error("No image generated."); } } catch (error) { showToast("Failed to generate image.", 'error'); } finally { btn.classList.remove('loading'); btn.disabled = false; imagePreviewContainer.classList.remove('loading'); } }
+        async function generateAiForAllSelectedDescriptions() { for (const itemId of selectedItems) { const item = menu.find(i => i.id === itemId); if (item) { try { const prompt = `Generate a short, appetizing menu description for a dish called '${item.name}'. Keep it under 20 words.`; const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] }; const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; const result = await fetchWithBackoff(apiUrl, payload); if (result.candidates && result.candidates[0].content.parts[0].text) { item.description = result.candidates[0].content.parts[0].text.trim(); } } catch (e) { /* ignore individual failures */ } } } renderAdminTable(); showToast('AI descriptions generated for selected items.'); }
+        async function generateAiForAllSelectedImages() {
+            const selectedIds = [...selectedItems];
+            if (selectedIds.length === 0) return;
+            selectedIds.forEach(id => { const spinner = document.querySelector(`#item-${id} #spinner-${id}`); if (spinner) spinner.classList.remove('hidden'); });
+            const generationPromises = selectedIds.map(async (itemId) => {
+                const item = menu.find(i => i.id === itemId);
+                if (!item) return;
+                try {
+                    const prompt = `A photorealistic, professional food photography shot of '${item.name}', beautifully plated on a clean white background, ready for a restaurant menu.`;
+                    const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                    const result = await fetchWithBackoff(apiUrl, payload);
+                    if (result.predictions && result.predictions[0].bytesBase64Encoded) { item.image = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`; }
+                } catch (e) { console.error(`Failed to generate image for item ${item.id}:`, e); }
+            });
+            await Promise.allSettled(generationPromises);
+            renderAdminTable();
+            showToast('AI images generated for selected items.');
+        }
+
+        // --- UTILITY ---
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+            toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-20', 'opacity-0');
+            }, 100);
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            if (isUserAdmin) {
+                document.getElementById('nav-admin').classList.remove('hidden');
+                document.getElementById('nav-kot').classList.remove('hidden');
+                showPage('admin-page');
+                renderAdminTable();
+            } else {
+                showPage('menu-page');
+            }
+            renderFilters();
+            renderCustomerMenu();
+        };
+    </script>
+</body>
+</html>
