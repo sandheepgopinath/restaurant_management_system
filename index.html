@@ -329,7 +329,7 @@
 
         // --- STEP 1: PASTE YOUR FIREBASE CONFIG HERE ---
         const firebaseConfig = {
-            apiKey: "AIzaSyCmQD17ioAGRE-Do19EUR4fOHRRQ0BcYcU",
+            apiKpooley: "AIzaSyCmQD17ioAGRE-Do19EUR4fOHRRQ0BcYcU",
             authDomain: "restaurant-management-sy-eca0a.firebaseapp.com",
             projectId: "restaurant-management-sy-eca0a",
             storageBucket: "restaurant-management-sy-eca0a.firebasestorage.app",
@@ -337,8 +337,6 @@
             appId: "1:637956283200:web:94b391036383993a6bb8a5",
             measurementId: "G-385MLNC7R3"
         };
-        
-        
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -508,12 +506,14 @@
             document.getElementById(pageId).classList.remove('hidden');
             navLinks.forEach(link => link.classList.remove('active'));
             
-            let navId = pageId.replace('-page', '');
-             if (pageId === 'user-management-page' && isSuperUser) {
-                navId = 'restaurant-management';
+            let activeNavId = '';
+            if (pageId === 'user-management-page') {
+                activeNavId = isSuperUser ? 'nav-restaurant-management' : 'nav-user-management';
+            } else {
+                activeNavId = `nav-${pageId.replace('-page', '')}`;
             }
-
-            const activeLink = document.getElementById(`nav-${navId}`);
+            
+            const activeLink = document.getElementById(activeNavId);
             if(activeLink) activeLink.classList.add('active');
             
             if(isUserAdmin) {
@@ -645,12 +645,19 @@
                 role: document.getElementById('editUserRole').value,
                 restaurantId: managingUsersForRestaurantId
             };
-            if (userId) {
-                await setDoc(doc(db, "users", userId), userData, { merge: true });
-            } else {
-                await addDoc(collection(db, "users"), userData);
+            try {
+                if (userId) {
+                    await setDoc(doc(db, "users", userId), userData, { merge: true });
+                    showToast('User updated successfully!');
+                } else {
+                    await addDoc(collection(db, "users"), userData);
+                    showToast('User added successfully!');
+                }
+                closeUserEditModal();
+            } catch (error) {
+                console.error("Error saving user:", error);
+                showToast("Failed to save user.", 'error');
             }
-            closeUserEditModal();
         }
 
         async function deleteUser(userId) {
@@ -688,6 +695,22 @@
         // Add event listeners to forms
         document.getElementById('user-edit-form').addEventListener('submit', saveUser);
         document.getElementById('restaurant-edit-form').addEventListener('submit', saveRestaurant);
+        
+        // --- UTILITY ---
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+            toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-20', 'opacity-0');
+            }, 100);
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         // --- INITIALIZATION ---
         function startApp() {
@@ -760,7 +783,26 @@
         window.showPage = showPage;
         window.openRestaurantEditModal = () => document.getElementById('restaurant-edit-modal').classList.remove('hidden');
         window.closeRestaurantEditModal = () => document.getElementById('restaurant-edit-modal').classList.add('hidden');
-        window.openUserEditModal = () => document.getElementById('user-edit-modal').classList.remove('hidden');
+        window.openUserEditModal = (userId = null) => {
+            const userEditForm = document.getElementById('user-edit-form');
+            const userEditModalTitle = document.getElementById('user-edit-modal-title');
+            userEditForm.reset();
+            const isNew = userId === null;
+            userEditModalTitle.textContent = isNew ? 'Add New User' : 'Edit User';
+            document.getElementById('editUserId').value = isNew ? '' : userId;
+            if (!isNew) {
+                const user = localUsers.find(u => u.id === userId);
+                if (!user) {
+                    console.error("User not found for editing:", userId);
+                    showToast("Could not find user to edit.", "error");
+                    return;
+                };
+                document.getElementById('editUserEmail').value = user.email;
+                document.getElementById('editUserPassword').value = user.password;
+                document.getElementById('editUserRole').value = user.role;
+            }
+            document.getElementById('user-edit-modal').classList.remove('hidden');
+        };
         window.closeUserEditModal = () => document.getElementById('user-edit-modal').classList.add('hidden');
         window.deleteRestaurant = deleteRestaurant;
         window.deleteUser = deleteUser;
