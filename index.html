@@ -47,13 +47,6 @@
         .kot-card { cursor: grab; }
         .kot-card.dragging { opacity: 0.5; cursor: grabbing; }
         .kot-card.drag-over { border: 2px dashed #4f46e5; }
-        .chat-bubble { max-width: 80%; }
-        .chat-bubble-user { background-color: #4f46e5; color: white; }
-        .chat-bubble-agent { background-color: #e5e7eb; color: #1f2937; }
-        .typing-indicator span { height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
     </style>
 </head>
 <body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
@@ -99,35 +92,31 @@
             <!-- Customer Menu Page -->
             <div id="menu-page" class="page hidden">
                 <header class="mb-8 text-center">
-                    <div class="flex justify-center items-center gap-4">
-                        <button id="standard-menu-toggle" onclick="toggleStandardMenu()" class="bg-white text-gray-800 font-semibold py-2 px-6 rounded-full shadow-sm border border-gray-300 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h4a1 1 0 100-2H7zm0 4a1 1 0 100 2h4a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
-                            <span>View Standard Menu</span>
-                        </button>
-                        <button id="chat-agent-btn" onclick="openChatAgent()" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-full shadow-sm flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.08-3.239A8.962 8.962 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM4.72 14.28A7 7 0 0010 16a7 7 0 007-7c0-3.309-2.69-6-6-6S4 6.691 4 10c0 .603.092 1.18.26 1.721L4.72 14.28z" clip-rule="evenodd" /></svg>
-                            <span>Chat with Agent</span>
-                        </button>
-                    </div>
+                    <h1 class="text-4xl font-extrabold text-gray-800">Our Menu</h1>
+                    <p class="text-lg text-gray-600 mt-2">Find the perfect dish to satisfy your cravings.</p>
+                    <div class="mt-4"><button id="standard-menu-toggle" onclick="toggleStandardMenu()" class="bg-white text-gray-800 font-semibold py-2 px-6 rounded-full shadow-sm border border-gray-300">View Standard Menu</button></div>
                 </header>
                 <div id="filter-section" class="glass-panel rounded-2xl p-6 mb-8 space-y-6"></div>
-                <main id="customer-menu-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></main>
+                <main id="customer-menu-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></main>
             </div>
 
             <!-- My Orders Page (Customer) -->
             <div id="my-orders-page" class="page hidden">
+                 <header class="mb-8"><h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">My Orders</h1></header>
                  <main id="my-orders-list" class="space-y-4"></main>
             </div>
             
             <!-- KOT Page (Kitchen) -->
             <div id="kot-page" class="page hidden">
-                 <main id="kot-list" class="flex flex-col gap-4"></main>
+                 <header class="mb-8"><h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">Kitchen Order Tickets (KOT)</h1></header>
+                 <main id="kot-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></main>
             </div>
 
             <!-- Admin Page (Menu Management) -->
             <div id="admin-page" class="page hidden">
                 <header class="mb-8">
-                    <div class="flex items-center gap-3">
+                    <h1 id="admin-page-title" class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-4">Menu Management</h1>
+                    <div id="admin-page-actions" class="flex items-center gap-3">
                         <button onclick="openEditModal()" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition transform hover:scale-105">Add New Item</button>
                         <div id="selection-actions" class="flex gap-3">
                             <button id="delete-selected-btn" onclick="openDeleteConfirmModal()" class="hidden bg-red-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-red-700 transition transform hover:scale-105">Delete Selected</button>
@@ -136,22 +125,29 @@
                         </div>
                     </div>
                 </header>
-                <main class="glass-panel rounded-2xl overflow-hidden">
-                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="border-b-2 border-gray-200 bg-white/50">
-                                <tr>
-                                    <th class="p-4 w-12"><input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this.checked)" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"></th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Description</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Prep Time</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Price</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-menu-table-body"></tbody>
-                        </table>
+                <main>
+                    <div id="restaurant-selector-admin" class="hidden glass-panel rounded-2xl p-8 text-center">
+                        <h2 class="text-2xl font-bold mb-4">Select a Restaurant</h2>
+                        <p class="text-gray-600 mb-6">Please choose a restaurant to manage its menu.</p>
+                        <div id="restaurant-selector-buttons" class="flex flex-wrap justify-center gap-4"></div>
+                    </div>
+                    <div id="admin-menu-container" class="hidden glass-panel rounded-2xl overflow-hidden">
+                         <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="border-b-2 border-gray-200 bg-white/50">
+                                    <tr>
+                                        <th class="p-4 w-12"><input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this.checked)" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"></th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Prep Time</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Price</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-menu-table-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </main>
             </div>
@@ -193,7 +189,10 @@
                             <thead class="border-b-2 border-gray-200 bg-white/50">
                                 <tr>
                                     <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Restaurant Name</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Actions</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Owner Name</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Address</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="restaurant-table-body"></tbody>
@@ -260,21 +259,14 @@
             <div class="flex justify-center gap-4"><button onclick="closeCancelConfirmModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">No</button><button id="confirm-cancel-btn" onclick="" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Yes, Cancel</button></div>
         </div>
     </div>
-    <div id="chat-agent-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="glass-panel rounded-2xl w-full max-w-lg flex flex-col" style="height: 70vh;">
-            <header class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-gray-800">AI Food Recommender</h2>
-                <button onclick="closeChatAgent()" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
-            </header>
-            <main id="chat-messages" class="flex-1 p-4 space-y-4 overflow-y-auto"></main>
-            <footer class="p-4 border-t border-gray-200">
-                <form id="chat-form" class="flex items-center gap-2">
-                    <input id="chat-input" type="text" class="w-full p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Ask for a recommendation..." autocomplete="off">
-                    <button type="submit" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-                    </button>
-                </form>
-            </footer>
+    <div id="delete-restaurant-confirm-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Are you sure?</h2>
+            <p class="text-gray-600 mb-6">You are about to delete <strong id="delete-restaurant-name"></strong> and all of its associated users. This action cannot be undone.</p>
+            <div class="flex justify-center gap-4">
+                <button onclick="closeDeleteRestaurantConfirmModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">Cancel</button>
+                <button id="confirm-delete-restaurant-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Delete</button>
+            </div>
         </div>
     </div>
     <div id="user-edit-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -314,6 +306,18 @@
                     <label for="editRestaurantName" class="font-semibold text-gray-700">Restaurant Name</label>
                     <input required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="text" id="editRestaurantName" placeholder="e.g., The Grand Cafe">
                 </div>
+                 <div>
+                    <label for="editRestaurantOwner" class="font-semibold text-gray-700">Owner Name</label>
+                    <input class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="text" id="editRestaurantOwner" placeholder="e.g., John Doe">
+                </div>
+                 <div>
+                    <label for="editRestaurantContact" class="font-semibold text-gray-700">Contact Number</label>
+                    <input class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="text" id="editRestaurantContact" placeholder="e.g., 9876543210">
+                </div>
+                 <div>
+                    <label for="editRestaurantAddress" class="font-semibold text-gray-700">Address</label>
+                    <textarea class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" id="editRestaurantAddress" placeholder="e.g., 123 Main St, Anytown"></textarea>
+                </div>
                 <div class="text-right pt-4">
                     <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Save Restaurant</button>
                 </div>
@@ -337,6 +341,7 @@
             appId: "1:637956283200:web:94b391036383993a6bb8a5",
             measurementId: "G-385MLNC7R3"
         };
+        
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -375,22 +380,30 @@
         const myOrdersList = document.getElementById('my-orders-list');
         const kotList = document.getElementById('kot-list');
         const userManagementTitle = document.getElementById('user-management-title');
+        const adminPageTitle = document.getElementById('admin-page-title');
+        const adminPageActions = document.getElementById('admin-page-actions');
+        const restaurantSelectorAdmin = document.getElementById('restaurant-selector-admin');
+        const adminMenuContainer = document.getElementById('admin-menu-container');
         
         // --- RENDER FUNCTIONS (Defined early to avoid ReferenceError) ---
         function renderRestaurantTable() {
             restaurantTableBody.innerHTML = '';
             localRestaurants.forEach(resto => {
                 const row = document.createElement('tr');
-                row.className = 'table-row border-b border-gray-200';
+                row.className = `table-row border-b border-gray-200 ${resto.id === currentRestaurantId && isSuperUser ? 'selected' : ''}`;
                 row.innerHTML = `
-                    <td class="p-4 font-semibold text-gray-800">${resto.name}</td>
-                    <td class="p-4 text-center">
-                        <div class="flex items-center justify-center gap-4">
+                    <td class="p-4 font-semibold text-gray-800">${resto.name} ${resto.id === currentRestaurantId && isSuperUser ? '<span class="text-xs text-indigo-600 font-bold ml-2">(ACTIVE)</span>' : ''}</td>
+                    <td class="p-4 text-gray-600">${resto.ownerName || ''}</td>
+                    <td class="p-4 text-gray-600">${resto.contactNumber || ''}</td>
+                    <td class="p-4 text-gray-600">${resto.address || ''}</td>
+                    <td class="p-4 text-right">
+                        <div class="flex items-center justify-end gap-4">
+                            ${isSuperUser && resto.id !== currentRestaurantId ? `<button onclick="selectRestaurant('${resto.id}')" class="text-sm bg-green-200 text-green-800 px-3 py-1 rounded-full font-semibold">Select</button>` : ''}
                             <button onclick="showPage('user-management-page', '${resto.id}')" class="text-sm bg-gray-200 px-3 py-1 rounded-full font-semibold">Manage Users</button>
                             <button onclick="openRestaurantEditModal('${resto.id}')" class="text-gray-500 hover:text-blue-600" title="Edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                             </button>
-                            <button onclick="deleteRestaurant('${resto.id}')" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            <button onclick="openDeleteRestaurantConfirmModal('${resto.id}')" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
                         </div>
                     </td>`;
                 restaurantTableBody.appendChild(row);
@@ -432,6 +445,16 @@
             loginError.classList.add('hidden');
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+
+            // Hardcoded backdoor for easy testing
+            if (email === 'a@a.com' && password === 'b') {
+                isUserAdmin = true;
+                isSuperUser = true;
+                currentUserId = 'superuser_test_id';
+                currentRestaurantId = null; // Superuser doesn't belong to a single restaurant initially
+                startApp();
+                return; // Exit after handling the backdoor login
+            }
             
             try {
                 const usersRef = collection(db, "users");
@@ -459,11 +482,21 @@
         });
 
         // --- DATA LISTENERS ---
+        let unsubscribeMenu, unsubscribeKot;
         function setupDataListeners() {
+            // Unsubscribe from previous listeners to prevent memory leaks
+            if (unsubscribeMenu) unsubscribeMenu();
+            if (unsubscribeKot) unsubscribeKot();
+
             // Listen for restaurant changes (for superuser)
             if (isSuperUser) {
                 onSnapshot(collection(db, "restaurants"), (snapshot) => {
                     localRestaurants = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    if (!currentRestaurantId && localRestaurants.length > 0) {
+                        currentRestaurantId = localRestaurants[0].id; // Set a default
+                        setupDataListeners(); // Re-run to get menu/kot for the default
+                        return; // Exit to avoid running the rest of the function with old state
+                    }
                     if (document.getElementById('restaurant-management-page').offsetParent !== null) {
                         renderRestaurantTable();
                     }
@@ -484,7 +517,7 @@
             // Listen for menu and KOT changes for the current restaurant
             if (currentRestaurantId) {
                 const menuRef = collection(db, "restaurants", currentRestaurantId, "menu");
-                onSnapshot(menuRef, (snapshot) => {
+                unsubscribeMenu = onSnapshot(menuRef, (snapshot) => {
                     localMenu = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     if (document.getElementById('menu-page').offsetParent !== null || document.getElementById('admin-page').offsetParent !== null) {
                         isUserAdmin ? renderAdminTable() : renderCustomerMenu();
@@ -492,7 +525,7 @@
                 });
 
                 const kotRef = collection(db, "restaurants", currentRestaurantId, "kot");
-                onSnapshot(query(kotRef, orderBy("timestamp", "asc")), (snapshot) => {
+                unsubscribeKot = onSnapshot(query(kotRef, orderBy("timestamp", "asc")), (snapshot) => {
                     localKot = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     if (document.getElementById('kot-page').offsetParent !== null) renderKOT();
                     if (document.getElementById('my-orders-page').offsetParent !== null) renderMyOrders();
@@ -529,6 +562,13 @@
                 renderUserTable();
             }
             if (pageId === 'restaurant-management-page') renderRestaurantTable();
+            if (pageId === 'admin-page') {
+                if(isSuperUser && !currentRestaurantId) {
+                    renderRestaurantSelectorForAdmin();
+                } else {
+                    showAdminMenu();
+                }
+            }
         }
 
         // --- RENDER FUNCTIONS (now use local state) ---
@@ -669,25 +709,60 @@
         async function saveRestaurant(e) {
             e.preventDefault();
             const restoId = document.getElementById('editRestaurantId').value;
-            const restoName = document.getElementById('editRestaurantName').value;
-            if (restoId) {
-                await setDoc(doc(db, "restaurants", restoId), { name: restoName }, { merge: true });
-            } else {
-                await addDoc(collection(db, "restaurants"), { name: restoName });
+            const restoData = {
+                name: document.getElementById('editRestaurantName').value,
+                ownerName: document.getElementById('editRestaurantOwner').value,
+                contactNumber: document.getElementById('editRestaurantContact').value,
+                address: document.getElementById('editRestaurantAddress').value
+            };
+
+            try {
+                if (restoId) {
+                    await setDoc(doc(db, "restaurants", restoId), restoData, { merge: true });
+                    showToast('Restaurant updated successfully!');
+                } else {
+                    await addDoc(collection(db, "restaurants"), restoData);
+                    showToast('Restaurant added successfully!');
+                }
+                closeRestaurantEditModal();
+            } catch(error) {
+                console.error("Error saving restaurant: ", error);
+                showToast("Failed to save restaurant. Please check connection.", 'error');
             }
-            closeRestaurantEditModal();
+        }
+
+        function openDeleteRestaurantConfirmModal(restoId) {
+            const resto = localRestaurants.find(r => r.id === restoId);
+            if (!resto) return;
+
+            const modal = document.getElementById('delete-restaurant-confirm-modal');
+            document.getElementById('delete-restaurant-name').textContent = resto.name;
+            document.getElementById('confirm-delete-restaurant-btn').onclick = () => deleteRestaurant(restoId);
+            modal.classList.remove('hidden');
+        }
+
+        function closeDeleteRestaurantConfirmModal() {
+            document.getElementById('delete-restaurant-confirm-modal').classList.add('hidden');
         }
 
         async function deleteRestaurant(restoId) {
-            if (confirm('Are you sure you want to delete this restaurant and all its users? This cannot be undone.')) {
+            try {
                 // Note: Deleting subcollections is more complex and requires a cloud function for production.
                 // This client-side delete is for demonstration purposes.
                 await deleteDoc(doc(db, "restaurants", restoId));
                 // Also delete users associated with this restaurant
                 const usersToDelete = localUsers.filter(u => u.restaurantId === restoId);
-                for(const user of usersToDelete) {
-                    await deleteDoc(doc(db, "users", user.id));
-                }
+                const batch = writeBatch(db);
+                usersToDelete.forEach(user => {
+                    batch.delete(doc(db, "users", user.id));
+                });
+                await batch.commit();
+                
+                closeDeleteRestaurantConfirmModal();
+                showToast('Restaurant deleted successfully!');
+            } catch(error) {
+                console.error("Error deleting restaurant:", error);
+                showToast("Failed to delete restaurant.", 'error');
             }
         }
 
@@ -724,7 +799,9 @@
             if (isUserAdmin) {
                 document.getElementById('nav-admin').classList.remove('hidden');
                 document.getElementById('nav-kot').classList.remove('hidden');
-                document.getElementById('nav-user-management').classList.remove('hidden');
+                if(!isSuperUser) { // Regular admins get their own user management tab
+                    document.getElementById('nav-user-management').classList.remove('hidden');
+                }
             }
 
             if (isSuperUser) {
@@ -734,7 +811,6 @@
                 showPage('admin-page'); // Regular admin starts here
             } else { // Customer
                 showPage('menu-page');
-                document.getElementById('filter-section').innerHTML = '';
                 renderFilters();
             }
         };
@@ -753,10 +829,10 @@
 
             // Create Restaurants
             const resto1Ref = doc(collection(db, "restaurants"));
-            batch.set(resto1Ref, { name: 'SGS Grand Restaurant' });
+            batch.set(resto1Ref, { name: 'SGS Grand Restaurant', ownerName: 'Mr. Smith', contactNumber: '111-222-3333', address: '123 Gastronomy Lane' });
 
             const resto2Ref = doc(collection(db, "restaurants"));
-            batch.set(resto2Ref, { name: 'The Corner Bistro' });
+            batch.set(resto2Ref, { name: 'The Corner Bistro', ownerName: 'Ms. Jones', contactNumber: '444-555-6666', address: '456 Culinary Corner' });
 
             // Create Users
             const superUserRef = doc(collection(db, "users"));
@@ -781,7 +857,23 @@
 
         // Make some functions globally accessible from HTML onclick
         window.showPage = showPage;
-        window.openRestaurantEditModal = () => document.getElementById('restaurant-edit-modal').classList.remove('hidden');
+        window.openRestaurantEditModal = (restoId = null) => {
+            const restaurantEditForm = document.getElementById('restaurant-edit-form');
+            const restaurantEditModalTitle = document.getElementById('restaurant-edit-modal-title');
+            restaurantEditForm.reset();
+            const isNew = restoId === null;
+            restaurantEditModalTitle.textContent = isNew ? 'Add New Restaurant' : 'Edit Restaurant';
+            document.getElementById('editRestaurantId').value = isNew ? '' : restoId;
+            if (!isNew) {
+                const resto = localRestaurants.find(r => r.id === restoId);
+                if (!resto) return;
+                document.getElementById('editRestaurantName').value = resto.name;
+                document.getElementById('editRestaurantOwner').value = resto.ownerName || '';
+                document.getElementById('editRestaurantContact').value = resto.contactNumber || '';
+                document.getElementById('editRestaurantAddress').value = resto.address || '';
+            }
+            document.getElementById('restaurant-edit-modal').classList.remove('hidden');
+        };
         window.closeRestaurantEditModal = () => document.getElementById('restaurant-edit-modal').classList.add('hidden');
         window.openUserEditModal = (userId = null) => {
             const userEditForm = document.getElementById('user-edit-form');
@@ -806,7 +898,52 @@
         window.closeUserEditModal = () => document.getElementById('user-edit-modal').classList.add('hidden');
         window.deleteRestaurant = deleteRestaurant;
         window.deleteUser = deleteUser;
-        // ... add other onclick functions that need to be global
+        window.openEditModal = (itemId = null) => {
+            const editItemForm = document.getElementById('edit-item-form');
+            const editModalTitle = document.getElementById('edit-modal-title');
+            editItemForm.reset(); 
+            const isNew = itemId === null; 
+            editModalTitle.textContent = isNew ? 'Add New Item' : 'Edit Menu Item'; 
+            document.getElementById('editItemId').value = isNew ? '' : itemId; 
+            if (!isNew) { 
+                const item = localMenu.find(i => i.id === itemId); 
+                if (!item) return; 
+                document.getElementById('editItemName').value = item.name; 
+                document.getElementById('editItemDesc').value = item.description; 
+                document.getElementById('editItemPrepTime').value = item.prepTime; 
+                document.getElementById('editItemPrice').value = item.price; 
+                document.getElementById('editItemImage').value = item.image; 
+                // updateImagePreview(item.image); 
+            } else { 
+                // updateImagePreview(''); 
+            } 
+            document.getElementById('edit-modal').classList.remove('hidden');
+        };
+        window.selectRestaurant = (restoId) => {
+            currentRestaurantId = restoId;
+            setupDataListeners();
+            showPage('admin-page');
+        };
+        window.renderRestaurantSelectorForAdmin = () => {
+            const buttonContainer = document.getElementById('restaurant-selector-buttons');
+            buttonContainer.innerHTML = '';
+            localRestaurants.forEach(resto => {
+                buttonContainer.innerHTML += `<button onclick="selectRestaurant('${resto.id}')" class="bg-indigo-100 text-indigo-700 font-semibold py-3 px-6 rounded-lg">${resto.name}</button>`;
+            });
+            adminMenuContainer.classList.add('hidden');
+            adminPageActions.classList.add('hidden');
+            restaurantSelectorAdmin.classList.remove('hidden');
+        };
+        window.showAdminMenu = () => {
+            const restaurant = localRestaurants.find(r => r.id === currentRestaurantId);
+            adminPageTitle.textContent = restaurant ? `Menu Management for ${restaurant.name}` : 'Menu Management';
+            restaurantSelectorAdmin.classList.add('hidden');
+            adminMenuContainer.classList.remove('hidden');
+            adminPageActions.classList.remove('hidden');
+            renderAdminTable();
+        };
+        window.openDeleteRestaurantConfirmModal = openDeleteRestaurantConfirmModal;
+        window.closeDeleteRestaurantConfirmModal = closeDeleteRestaurantConfirmModal;
     </script>
 </body>
 </html>
