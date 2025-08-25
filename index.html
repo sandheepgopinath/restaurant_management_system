@@ -156,7 +156,10 @@
                 <header class="mb-8">
                     <div class="flex items-center justify-between">
                         <h2 id="user-management-title" class="text-2xl font-bold">User Management</h2>
-                        <button onclick="openUserEditModal()" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition transform hover:scale-105">Add New User</button>
+                        <div class="flex items-center gap-4">
+                            <button id="back-to-restaurants-btn" onclick="showPage('restaurant-management-page')" class="text-sm bg-gray-200 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 hidden">← Back to Restaurants</button>
+                            <button onclick="openUserEditModal()" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition transform hover:scale-105">Add New User</button>
+                        </div>
                     </div>
                 </header>
                 <main class="glass-panel rounded-2xl overflow-hidden">
@@ -499,6 +502,9 @@
                     if (document.getElementById('restaurant-management-page').offsetParent !== null) {
                         renderRestaurantTable();
                     }
+                    if (document.getElementById('admin-page').offsetParent !== null) {
+                        populateAdminRestaurantSelector();
+                    }
                 });
             }
 
@@ -557,6 +563,7 @@
             if (pageId === 'my-orders-page') renderMyOrders();
             if (pageId === 'kot-page') renderKOT();
             if (pageId === 'user-management-page') {
+                document.getElementById('back-to-restaurants-btn').classList.toggle('hidden', !isSuperUser);
                 managingUsersForRestaurantId = contextId || currentRestaurantId;
                 renderUserTable();
             }
@@ -772,6 +779,15 @@
         // Add event listeners to forms
         document.getElementById('user-edit-form').addEventListener('submit', saveUser);
         document.getElementById('restaurant-edit-form').addEventListener('submit', saveRestaurant);
+        adminRestaurantSelector.addEventListener('change', (e) => {
+            const newRestoId = e.target.value;
+            if (newRestoId) {
+                selectRestaurant(newRestoId);
+            } else {
+                adminMenuContainer.classList.add('hidden');
+                adminPageActions.classList.add('hidden');
+            }
+        });
         
         // --- UTILITY ---
         function showToast(message, type = 'success') {
@@ -932,6 +948,19 @@
             adminMenuContainer.classList.remove('hidden');
             adminPageActions.classList.remove('hidden');
             renderAdminTable();
+        };
+        window.populateAdminRestaurantSelector = () => {
+            adminRestaurantSelectorContainer.classList.remove('hidden');
+            adminRestaurantSelector.innerHTML = '<option value="">Select a restaurant to manage...</option>';
+            localRestaurants.forEach(resto => {
+                const option = document.createElement('option');
+                option.value = resto.id;
+                option.textContent = resto.name;
+                if (resto.id === currentRestaurantId) {
+                    option.selected = true;
+                }
+                adminRestaurantSelector.appendChild(option);
+            });
         };
         window.openDeleteRestaurantConfirmModal = openDeleteRestaurantConfirmModal;
         window.closeDeleteRestaurantConfirmModal = closeDeleteRestaurantConfirmModal;
