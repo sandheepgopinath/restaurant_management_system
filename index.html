@@ -971,9 +971,9 @@
                 document.getElementById('editItemPrepTime').value = item.prepTime; 
                 document.getElementById('editItemPrice').value = item.price; 
                 document.getElementById('editItemImage').value = item.image; 
-                // updateImagePreview(item.image); 
+                updateImagePreview(item.image); 
             } else { 
-                // updateImagePreview(''); 
+                updateImagePreview(''); 
             } 
             document.getElementById('edit-modal').classList.remove('hidden');
         };
@@ -1022,7 +1022,7 @@
                 if (result.predictions && result.predictions[0].bytesBase64Encoded) {
                     const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
                     document.getElementById('editItemImage').value = imageUrl;
-                    // updateImagePreview(imageUrl); // This function needs to be defined if you want preview
+                    updateImagePreview(imageUrl);
                 } else { throw new Error("No image generated."); }
             } catch (error) {
                 showToast("Failed to generate image.", 'error');
@@ -1055,6 +1055,30 @@
                 btn.disabled = false;
             }
         };
+        window.handleImageUpload = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    document.getElementById('editItemImage').value = imageUrl;
+                    updateImagePreview(imageUrl);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        function updateImagePreview(src) {
+            const imagePreview = document.getElementById('image-preview');
+            const imagePlaceholder = document.getElementById('image-placeholder');
+            if (src) {
+                imagePreview.src = src;
+                imagePreview.classList.remove('hidden');
+                imagePlaceholder.classList.add('hidden');
+            } else {
+                imagePreview.classList.add('hidden');
+                imagePlaceholder.classList.remove('hidden');
+            }
+        }
     </script>
 </body>
 </html>
