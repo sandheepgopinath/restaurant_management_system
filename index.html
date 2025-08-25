@@ -56,9 +56,34 @@
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
 
-    <div class="container mx-auto max-w-7xl">
+    <!-- Login Page -->
+    <div id="login-page" class="w-full max-w-md">
+        <div class="glass-panel rounded-2xl p-8 md:p-12">
+            <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-6">Welcome Back</h1>
+            <form id="login-form">
+                <div class="space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="email" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="password" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="••••••••">
+                    </div>
+                    <p id="login-error" class="text-red-500 text-sm text-center hidden">Invalid email or password.</p>
+                    <div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Sign In
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-app-container" class="hidden container mx-auto max-w-7xl">
         <!-- Navigation -->
         <nav class="glass-panel rounded-full p-2 flex items-center gap-2 mb-8">
             <button id="nav-menu" onclick="showPage('menu-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full">Menu</button>
@@ -207,9 +232,9 @@
 
 
     <script>
-        // --- AUTH SIMULATION ---
-        const isUserAdmin = true;
-        const currentUserId = 'user123'; // Simulate a logged-in user
+        // --- AUTH STATE ---
+        let isUserAdmin = false;
+        let currentUserId = null; 
 
         // --- DATA ---
         let menu = [
@@ -233,6 +258,10 @@
         let standardMenuView = false;
 
         // DOM Elements
+        const loginPage = document.getElementById('login-page');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const mainAppContainer = document.getElementById('main-app-container');
         const pages = document.querySelectorAll('.page');
         const navLinks = document.querySelectorAll('.nav-link');
         const tableBody = document.getElementById('admin-menu-table-body');
@@ -267,6 +296,23 @@
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const chatMessages = document.getElementById('chat-messages');
+
+        // --- LOGIN LOGIC ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (email === 'superuser@tenantadmin.sgs.com' && password === 'sgs123') {
+                isUserAdmin = true;
+                currentUserId = 'admin123';
+                initializeApp();
+            } else {
+                // You can add non-admin user logic here if needed
+                loginError.classList.remove('hidden');
+            }
+        });
+
 
         // --- NAVIGATION & PAGE LOGIC ---
         function showPage(pageId) {
@@ -744,7 +790,12 @@
         }
 
         // --- INITIALIZATION ---
-        window.onload = () => {
+        function initializeApp() {
+            loginPage.classList.add('hidden');
+            mainAppContainer.classList.remove('hidden');
+            document.body.classList.remove('items-center', 'justify-center', 'min-h-screen');
+
+
             if (isUserAdmin) {
                 document.getElementById('nav-admin').classList.remove('hidden');
                 document.getElementById('nav-kot').classList.remove('hidden');
