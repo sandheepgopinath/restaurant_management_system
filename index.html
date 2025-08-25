@@ -341,12 +341,13 @@
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, onSnapshot, doc, addDoc, setDoc, deleteDoc, query, where, orderBy, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
        
         const firebaseConfig = {
             apiKpooley: "AIzaSyCmQD17ioAGRE-Do19EUR4fOHRRQ0BcYcU",
             authDomain: "restaurant-management-sy-eca0a.firebaseapp.com",
             projectId: "restaurant-management-sy-eca0a",
-            storageBucket: "restaurant-management-sy-eca0a.firebasestorage.app",
+            storageBucket: "restaurant-management-sy-eca0a.appspot.com",
             messagingSenderId: "637956283200",
             appId: "1:637956283200:web:94b391036383993a6bb8a5",
             measurementId: "G-385MLNC7R3"
@@ -355,6 +356,7 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
         // --- GLOBAL APP STATE ---
         let isUserAdmin = false;
@@ -1013,19 +1015,19 @@
             btn.disabled = true;
             document.getElementById('image-preview-container').classList.add('loading');
             try {
-                const prompt = `A photorealistic, professional food photography shot of '${dishName}', beautifully plated on a clean white background, ready for a restaurant menu.`;
-                const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const response = await fetch('/api/generateImage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dishName }),
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to generate image');
+                }
                 const result = await response.json();
-                if (result.predictions && result.predictions[0].bytesBase64Encoded) {
-                    const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-                    document.getElementById('editItemImage').value = imageUrl;
-                    updateImagePreview(imageUrl);
-                } else { throw new Error("No image generated."); }
+                document.getElementById('editItemImage').value = result.image;
+                updateImagePreview(result.image);
             } catch (error) {
-                showToast("Failed to generate image.", 'error');
+                showToast("Failed to generate image. This feature requires billing to be enabled on your Firebase project.", 'error');
             } finally {
                 btn.classList.remove('loading');
                 btn.disabled = false;
@@ -1039,15 +1041,16 @@
             btn.classList.add('loading');
             btn.disabled = true;
             try {
-                const prompt = `Generate a short, appetizing menu description for a dish called '${dishName}'. Keep it under 20 words.`;
-                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const response = await fetch('/api/generateDescription', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dishName }),
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to generate description');
+                }
                 const result = await response.json();
-                if (result.candidates && result.candidates[0].content.parts[0].text) {
-                    document.getElementById('editItemDesc').value = result.candidates[0].content.parts[0].text.trim();
-                } else { throw new Error("No description generated."); }
+                document.getElementById('editItemDesc').value = result.description;
             } catch (error) {
                 showToast("Failed to generate description.", 'error');
             } finally {
