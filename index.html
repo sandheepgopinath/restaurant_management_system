@@ -782,11 +782,43 @@
                 showToast("Failed to delete restaurant.", 'error');
             }
         }
+        
+        async function saveMenuItem(e) {
+            e.preventDefault();
+            const itemId = document.getElementById('editItemId').value;
+            const itemData = {
+                name: document.getElementById('editItemName').value,
+                description: document.getElementById('editItemDesc').value,
+                prepTime: parseInt(document.getElementById('editItemPrepTime').value),
+                price: parseInt(document.getElementById('editItemPrice').value),
+                image: document.getElementById('editItemImage').value,
+                tags: {} // Simplified for now
+            };
+
+            if (!currentRestaurantId) {
+                showToast("No restaurant selected.", 'error');
+                return;
+            }
+
+            try {
+                if (itemId) {
+                    await setDoc(doc(db, "restaurants", currentRestaurantId, "menu", itemId), itemData, { merge: true });
+                } else {
+                    await addDoc(collection(db, "restaurants", currentRestaurantId, "menu"), itemData);
+                }
+                showToast("Menu item saved successfully!");
+                closeEditModal();
+            } catch (error) {
+                console.error("Error saving menu item:", error);
+                showToast("Failed to save menu item.", 'error');
+            }
+        }
 
         // --- OTHER FUNCTIONS (need minor adjustments or are fine) ---
         // Add event listeners to forms
         document.getElementById('user-edit-form').addEventListener('submit', saveUser);
         document.getElementById('restaurant-edit-form').addEventListener('submit', saveRestaurant);
+        document.getElementById('edit-item-form').addEventListener('submit', saveMenuItem);
         adminRestaurantSelector.addEventListener('change', (e) => {
             const newRestoId = e.target.value;
             if (newRestoId) {
@@ -945,6 +977,7 @@
             } 
             document.getElementById('edit-modal').classList.remove('hidden');
         };
+        window.closeEditModal = () => document.getElementById('edit-modal').classList.add('hidden');
         window.selectRestaurant = (restoId) => {
             currentRestaurantId = restoId;
             setupDataListeners();
