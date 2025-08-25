@@ -341,7 +341,7 @@
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, onSnapshot, doc, addDoc, setDoc, deleteDoc, query, where, orderBy, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+       
         const firebaseConfig = {
             apiKpooley: "AIzaSyCmQD17ioAGRE-Do19EUR4fOHRRQ0BcYcU",
             authDomain: "restaurant-management-sy-eca0a.firebaseapp.com",
@@ -1005,6 +1005,56 @@
         };
         window.openDeleteRestaurantConfirmModal = openDeleteRestaurantConfirmModal;
         window.closeDeleteRestaurantConfirmModal = closeDeleteRestaurantConfirmModal;
+        window.generateAiImage = async () => {
+            const dishName = document.getElementById('editItemName').value;
+            const btn = document.getElementById('ai-generate-image-btn');
+            if (!dishName) { showToast("Please enter a dish name first.", 'error'); return; }
+            btn.classList.add('loading');
+            btn.disabled = true;
+            document.getElementById('image-preview-container').classList.add('loading');
+            try {
+                const prompt = `A photorealistic, professional food photography shot of '${dishName}', beautifully plated on a clean white background, ready for a restaurant menu.`;
+                const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await response.json();
+                if (result.predictions && result.predictions[0].bytesBase64Encoded) {
+                    const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                    document.getElementById('editItemImage').value = imageUrl;
+                    // updateImagePreview(imageUrl); // This function needs to be defined if you want preview
+                } else { throw new Error("No image generated."); }
+            } catch (error) {
+                showToast("Failed to generate image.", 'error');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                document.getElementById('image-preview-container').classList.remove('loading');
+            }
+        };
+        window.generateAiDescription = async () => {
+            const dishName = document.getElementById('editItemName').value;
+            const btn = document.getElementById('ai-generate-desc-btn');
+            if (!dishName) { showToast("Please enter a dish name first.", 'error'); return; }
+            btn.classList.add('loading');
+            btn.disabled = true;
+            try {
+                const prompt = `Generate a short, appetizing menu description for a dish called '${dishName}'. Keep it under 20 words.`;
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content.parts[0].text) {
+                    document.getElementById('editItemDesc').value = result.candidates[0].content.parts[0].text.trim();
+                } else { throw new Error("No description generated."); }
+            } catch (error) {
+                showToast("Failed to generate description.", 'error');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        };
     </script>
 </body>
 </html>
