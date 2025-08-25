@@ -47,6 +47,14 @@
         .kot-card { cursor: grab; }
         .kot-card.dragging { opacity: 0.5; cursor: grabbing; }
         .kot-card.drag-over { border: 2px dashed #4f46e5; }
+        #admin-restaurant-selector {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
@@ -115,10 +123,11 @@
             <!-- Admin Page (Menu Management) -->
             <div id="admin-page" class="page hidden">
                 <header class="mb-8">
-                    <h1 id="admin-page-title" class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-4">Menu Management</h1>
-                    <div id="admin-restaurant-selector-container" class="hidden mb-4">
-                        <label for="admin-restaurant-selector" class="block text-sm font-medium text-gray-700">Select Restaurant</label>
-                        <select id="admin-restaurant-selector" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
+                    <div class="flex justify-between items-center mb-4">
+                        <h1 id="admin-page-title" class="text-3xl md:text-4xl font-extrabold text-gray-800">Menu Management</h1>
+                        <div id="admin-restaurant-selector-container" class="hidden">
+                            <select id="admin-restaurant-selector" class="appearance-none w-full bg-white/80 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 pr-10"></select>
+                        </div>
                     </div>
                     <div id="admin-page-actions" class="hidden flex items-center gap-3">
                         <button onclick="openEditModal()" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition transform hover:scale-105">Add New Item</button>
@@ -333,7 +342,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, onSnapshot, doc, addDoc, setDoc, deleteDoc, query, where, orderBy, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- STEP 1: PASTE YOUR FIREBASE CONFIG HERE ---
         const firebaseConfig = {
             apiKpooley: "AIzaSyCmQD17ioAGRE-Do19EUR4fOHRRQ0BcYcU",
             authDomain: "restaurant-management-sy-eca0a.firebaseapp.com",
