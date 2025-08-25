@@ -90,6 +90,8 @@
             <button id="nav-my-orders" onclick="showPage('my-orders-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full">My Orders</button>
             <button id="nav-kot" onclick="showPage('kot-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full hidden">KOT</button>
             <button id="nav-admin" onclick="showPage('admin-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full hidden">Menu Management</button>
+            <button id="nav-user-management" onclick="showPage('user-management-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full hidden">User Management</button>
+            <button id="nav-restaurant-management" onclick="showPage('restaurant-management-page')" class="nav-link flex-1 text-center font-semibold py-2 px-4 rounded-full hidden">Restaurants</button>
         </nav>
 
         <!-- Page Content -->
@@ -149,6 +151,52 @@
                                 </tr>
                             </thead>
                             <tbody id="admin-menu-table-body"></tbody>
+                        </table>
+                    </div>
+                </main>
+            </div>
+
+             <!-- User Management Page -->
+            <div id="user-management-page" class="page hidden">
+                <header class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <h2 id="user-management-title" class="text-2xl font-bold">User Management</h2>
+                        <button onclick="openUserEditModal()" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition transform hover:scale-105">Add New User</button>
+                    </div>
+                </header>
+                <main class="glass-panel rounded-2xl overflow-hidden">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="border-b-2 border-gray-200 bg-white/50">
+                                <tr>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Role</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body"></tbody>
+                        </table>
+                    </div>
+                </main>
+            </div>
+
+            <!-- Restaurant Management Page -->
+            <div id="restaurant-management-page" class="page hidden">
+                <header class="mb-8">
+                    <div class="flex items-center gap-3">
+                        <button onclick="openRestaurantEditModal()" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition transform hover:scale-105">Add New Restaurant</button>
+                    </div>
+                </header>
+                <main class="glass-panel rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="border-b-2 border-gray-200 bg-white/50">
+                                <tr>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Restaurant Name</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="restaurant-table-body"></tbody>
                         </table>
                     </div>
                 </main>
@@ -229,26 +277,91 @@
             </footer>
         </div>
     </div>
+    <div id="user-edit-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-lg relative">
+            <button onclick="closeUserEditModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            <h2 id="user-edit-modal-title" class="text-2xl font-bold mb-6 text-gray-800">Add New User</h2>
+            <form id="user-edit-form" class="space-y-4">
+                <input type="hidden" id="editUserId">
+                <div>
+                    <label for="editUserEmail" class="font-semibold text-gray-700">Email</label>
+                    <input required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="email" id="editUserEmail" placeholder="user@example.com">
+                </div>
+                <div>
+                    <label for="editUserPassword" class="font-semibold text-gray-700">Password</label>
+                    <input required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="password" id="editUserPassword" placeholder="••••••••">
+                </div>
+                <div>
+                    <label for="editUserRole" class="font-semibold text-gray-700">Role</label>
+                    <select id="editUserRole" class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="customer">Customer</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="text-right pt-4">
+                    <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Save User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="restaurant-edit-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-panel rounded-2xl p-8 w-full max-w-lg relative">
+            <button onclick="closeRestaurantEditModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            <h2 id="restaurant-edit-modal-title" class="text-2xl font-bold mb-6 text-gray-800">Add New Restaurant</h2>
+            <form id="restaurant-edit-form" class="space-y-4">
+                <input type="hidden" id="editRestaurantId">
+                <div>
+                    <label for="editRestaurantName" class="font-semibold text-gray-700">Restaurant Name</label>
+                    <input required class="w-full mt-1 p-3 bg-white/80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" type="text" id="editRestaurantName" placeholder="e.g., The Grand Cafe">
+                </div>
+                <div class="text-right pt-4">
+                    <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Save Restaurant</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     <script>
         // --- AUTH STATE ---
         let isUserAdmin = false;
+        let isSuperUser = false;
         let currentUserId = null; 
+        let currentRestaurantId = null;
+        let managingUsersForRestaurantId = null;
 
         // --- DATA ---
-        let menu = [
-            { id: 1, name: "Classic Bruschetta", price: 300, image: "https://images.unsplash.com/photo-1505253716362-afb74b626351?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Toasted bread with tomatoes, garlic, and basil.", prepTime: 10, tags: { hunger: 'snack', cuisine: 'Italian', type: 'starter', taste: 'savory' } },
-            { id: 2, name: "Garlic Bread", price: 250, image: "https://images.unsplash.com/photo-1627308595182-4c9da33e_578e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Warm bread with garlic butter and herbs.", prepTime: 8, tags: { hunger: 'snack', cuisine: 'Italian', type: 'starter', taste: 'savory' } },
-            { id: 3, name: "Margherita Pizza", price: 450, image: "https://images.unsplash.com/photo-1598021680133-eb-a16c12142?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Classic pizza with tomato, mozzarella, and basil.", prepTime: 20, tags: { hunger: 'large', cuisine: 'Italian', type: 'main', taste: 'creamy' } },
-            { id: 4, name: "Pasta Arrabiata", price: 400, image: "https://images.unsplash.com/photo-1621996346565-e326a222a222?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Spicy tomato sauce pasta.", prepTime: 15, tags: { hunger: 'medium', cuisine: 'Italian', type: 'main', taste: 'spicy' } },
-            { id: 5, name: "Vegetable Lasagna", price: 500, image: "https://images.unsplash.com/photo-1619895092593-0fe2491ab0a7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Layered pasta with vegetables and cheese.", prepTime: 25, tags: { hunger: 'large', cuisine: 'Italian', type: 'main', taste: 'creamy' } },
-            { id: 7, name: "Paneer Tikka", price: 450, image: "", description: "Grilled cottage cheese skewers.", prepTime: 18, tags: { hunger: 'medium', cuisine: 'Indian', type: 'starter', taste: 'spicy' } },
-            { id: 8, name: "Sizzling Brownie", price: 350, image: "https://images.unsplash.com/photo-1610513320995-1ad4b187524b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Warm chocolate brownie with ice cream.", prepTime: 12, tags: { hunger: 'snack', cuisine: 'Continental', type: 'dessert', taste: 'sweet' } },
-            { id: 9, name: "Mango Lassi", price: 180, image: "https://images.unsplash.com/photo-1626803364127-040034133534?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Refreshing yogurt-based mango smoothie.", prepTime: 5, tags: { hunger: 'snack', cuisine: 'Indian', type: 'juice', taste: 'sweet' } }
+        let restaurants = [
+            { id: 1, name: 'SGS Grand Restaurant' },
+            { id: 2, name: 'The Corner Bistro' }
         ];
 
-        let kot = []; // Kitchen Order Tickets
+        let users = [
+            { id: 1, email: 'superuser@tenantadmin.sgs.com', password: 'sgs123', role: 'admin', restaurantId: null }, // Superuser
+            { id: 2, email: 'customer@test.com', password: 'password', role: 'customer', restaurantId: 1 },
+            { id: 3, email: 'admin@sgsgrand.com', password: 'password', role: 'admin', restaurantId: 1 },
+            { id: 4, email: 'user@bistro.com', password: 'password', role: 'customer', restaurantId: 2 }
+        ];
+
+        let appData = {
+            1: { // Data for restaurantId 1
+                menu: [
+                    { id: 1, name: "Classic Bruschetta", price: 300, image: "https://images.unsplash.com/photo-1505253716362-afb74b626351?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Toasted bread with tomatoes, garlic, and basil.", prepTime: 10, tags: { hunger: 'snack', cuisine: 'Italian', type: 'starter', taste: 'savory' } },
+                    { id: 3, name: "Margherita Pizza", price: 450, image: "https://images.unsplash.com/photo-1598021680133-eb-a16c12142?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Classic pizza with tomato, mozzarella, and basil.", prepTime: 20, tags: { hunger: 'large', cuisine: 'Italian', type: 'main', taste: 'creamy' } },
+                    { id: 7, name: "Paneer Tikka", price: 450, image: "", description: "Grilled cottage cheese skewers.", prepTime: 18, tags: { hunger: 'medium', cuisine: 'Indian', type: 'starter', taste: 'spicy' } },
+                    { id: 9, name: "Mango Lassi", price: 180, image: "https://images.unsplash.com/photo-1626803364127-040034133534?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Refreshing yogurt-based mango smoothie.", prepTime: 5, tags: { hunger: 'snack', cuisine: 'Indian', type: 'juice', taste: 'sweet' } }
+                ],
+                kot: []
+            },
+            2: { // Data for restaurantId 2
+                menu: [
+                    { id: 2, name: "Garlic Bread", price: 250, image: "https://images.unsplash.com/photo-1627308595182-4c9da33e_578e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Warm bread with garlic butter and herbs.", prepTime: 8, tags: { hunger: 'snack', cuisine: 'Italian', type: 'starter', taste: 'savory' } },
+                    { id: 8, name: "Sizzling Brownie", price: 350, image: "https://images.unsplash.com/photo-1610513320995-1ad4b187524b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80", description: "Warm chocolate brownie with ice cream.", prepTime: 12, tags: { hunger: 'snack', cuisine: 'Continental', type: 'dessert', taste: 'sweet' } }
+                ],
+                kot: []
+            }
+        };
+
         let currentOrder = [];
         let editingOrder = null; // To hold the order being edited
         let tempEditingItems = []; // Temporary copy of items for editing
@@ -265,6 +378,8 @@
         const pages = document.querySelectorAll('.page');
         const navLinks = document.querySelectorAll('.nav-link');
         const tableBody = document.getElementById('admin-menu-table-body');
+        const userTableBody = document.getElementById('user-table-body');
+        const restaurantTableBody = document.getElementById('restaurant-table-body');
         const deleteSelectedBtn = document.getElementById('delete-selected-btn');
         const aiDescSelectedBtn = document.getElementById('ai-desc-selected-btn');
         const aiImgSelectedBtn = document.getElementById('ai-img-selected-btn');
@@ -296,34 +411,63 @@
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const chatMessages = document.getElementById('chat-messages');
+        const userEditModal = document.getElementById('user-edit-modal');
+        const userEditForm = document.getElementById('user-edit-form');
+        const userEditModalTitle = document.getElementById('user-edit-modal-title');
+        const restaurantEditModal = document.getElementById('restaurant-edit-modal');
+        const restaurantEditForm = document.getElementById('restaurant-edit-form');
+        const restaurantEditModalTitle = document.getElementById('restaurant-edit-modal-title');
+        const userManagementTitle = document.getElementById('user-management-title');
 
         // --- LOGIN LOGIC ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            
+            const user = users.find(u => u.email === email && u.password === password);
 
-            if (email === 'superuser@tenantadmin.sgs.com' && password === 'sgs123') {
-                isUserAdmin = true;
-                currentUserId = 'admin123';
+            if (user) {
+                isUserAdmin = user.role === 'admin';
+                isSuperUser = user.email === 'superuser@tenantadmin.sgs.com';
+                currentUserId = user.id;
+                currentRestaurantId = user.restaurantId;
                 initializeApp();
             } else {
-                // You can add non-admin user logic here if needed
                 loginError.classList.remove('hidden');
             }
         });
 
 
         // --- NAVIGATION & PAGE LOGIC ---
-        function showPage(pageId) {
+        function showPage(pageId, contextId = null) {
             pages.forEach(page => page.classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
             navLinks.forEach(link => link.classList.remove('active'));
-            const activeLink = document.getElementById(`nav-${pageId.replace('-page', '')}`);
+            
+            let navId = pageId.replace('-page', '');
+            if (pageId === 'user-management-page' && !isSuperUser) {
+                navId = 'user-management';
+            } else if (pageId === 'user-management-page' && isSuperUser) {
+                navId = 'restaurant-management';
+            }
+
+            const activeLink = document.getElementById(`nav-${navId}`);
             if(activeLink) activeLink.classList.add('active');
-            cartBtn.classList.toggle('hidden', pageId !== 'menu-page');
+            
+            if(isUserAdmin) {
+                cartBtn.classList.add('hidden');
+            } else {
+                cartBtn.classList.toggle('hidden', pageId !== 'menu-page');
+            }
+
             if (pageId === 'my-orders-page') renderMyOrders();
             if (pageId === 'kot-page') renderKOT();
+            if (pageId === 'user-management-page') {
+                managingUsersForRestaurantId = contextId || currentRestaurantId;
+                renderUserTable();
+            }
+            if (pageId === 'restaurant-management-page') renderRestaurantTable();
         }
 
         // --- CUSTOMER MENU LOGIC ---
@@ -352,6 +496,7 @@
 
         function renderCustomerMenu() {
             customerMenuList.innerHTML = '';
+            const menu = appData[currentRestaurantId].menu;
             let filteredMenu = standardMenuView ? menu : menu.filter(item => Object.keys(currentFilters).every(key => currentFilters[key] === null || item.tags[key] === currentFilters[key]));
             if (filteredMenu.length === 0) {
                 customerMenuList.innerHTML = `<p class="text-gray-600 col-span-full text-center py-10">No dishes match your criteria. Try adjusting your filters!</p>`;
@@ -360,7 +505,7 @@
                     const itemInOrder = currentOrder.find(orderItem => orderItem.id === item.id);
                     const quantity = itemInOrder ? itemInOrder.quantity : 0;
                     const orderButtonHTML = quantity > 0
-                        ? `<div class="quantity-stepper"><button onclick="updateQuantityOnCard(${item.id}, -1)">-</button><span>${quantity}</span><button onclick="updateQuantityOnCard(${item.id}, 1)">+</button></div>`
+                        ? `<div class="quantity-stepper"><button onclick="updateQuantityOnCard(${item.id})">-</button><span>${quantity}</span><button onclick="updateQuantityOnCard(${item.id}, 1)">+</button></div>`
                         : `<button onclick="addToOrder(${item.id})" class="w-full bg-blue-500 text-white font-semibold py-2 rounded-lg hover:bg-blue-600 transition">Add to Order</button>`;
                     
                     customerMenuList.innerHTML += `<div class="menu-item-card bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col"><img src="${item.image || 'https://placehold.co/600x400/e2e8f0/2d3748?text=Image'}" alt="${item.name}" class="w-full h-40 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/2d3748?text=Image+Not+Found';"><div class="p-4 flex flex-col flex-grow"><div class="flex justify-between items-start"><h3 class="text-lg font-bold text-gray-800">${item.name}</h3><p class="text-lg font-semibold text-blue-600">₹${item.price}</p></div><p class="text-gray-600 text-sm mt-2 flex-grow">${item.description}</p><div class="mt-4">${orderButtonHTML}</div></div></div>`;
@@ -382,7 +527,7 @@
             if (existingItem) {
                 existingItem.quantity++;
             } else {
-                const menuItem = menu.find(item => item.id === itemId);
+                const menuItem = appData[currentRestaurantId].menu.find(item => item.id === itemId);
                 currentOrder.push({ ...menuItem, quantity: 1, status: 'Pending' });
             }
             updateCartCount();
@@ -408,6 +553,7 @@
         }
 
         function openOrderReviewPopup(orderId = null) {
+            const kot = appData[currentRestaurantId].kot;
             editingOrder = orderId ? kot.find(o => o.id === orderId) : null;
             tempEditingItems = editingOrder ? JSON.parse(JSON.stringify(editingOrder.items)) : currentOrder;
             
@@ -455,7 +601,7 @@
                 item.quantity += change;
                 if (item.quantity < 0) item.quantity = 0;
             } else if (change > 0) {
-                const menuItem = menu.find(i => i.id === itemId);
+                const menuItem = appData[currentRestaurantId].menu.find(i => i.id === itemId);
                 if(menuItem) items.push({ ...menuItem, quantity: 1 });
             }
             
@@ -477,6 +623,7 @@
 
         function confirmOrder(withMessage = false) {
             if (currentOrder.length === 0) return;
+            const kot = appData[currentRestaurantId].kot;
             
             const totalPrepTimeInQueue = kot.filter(o => o.status === 'Received' || o.status === 'Preparing').reduce((total, order) => total + order.totalPrepTime, 0);
             const orderTotalPrepTime = currentOrder.reduce((sum, item) => sum + (item.prepTime * item.quantity), 0);
@@ -518,6 +665,7 @@
         // --- MY ORDERS PAGE LOGIC ---
         function renderMyOrders() {
             myOrdersList.innerHTML = '';
+            const kot = appData[currentRestaurantId].kot;
             const myConfirmedOrders = kot.filter(o => o.userId === currentUserId).sort((a,b) => b.timestamp - a.timestamp);
 
             if (myConfirmedOrders.length === 0) {
@@ -528,7 +676,7 @@
             const receivedOrdersQueue = kot.filter(o => o.status === 'Received');
 
             myConfirmedOrders.forEach(order => {
-                const itemsHtml = order.items.map(item => `<div class="flex items-center justify-between bg-gray-100 p-2 rounded-lg text-sm"><span>${item.quantity} x ${item.name}</span>${order.status === 'Received' ? `<button onclick="cancelOrderItem('${order.id}', ${item.id})" class="text-red-500 font-bold text-lg">&times;</button>` : ''}</div>`).join('');
+                const itemsHtml = order.items.map(item => `<div class="flex items-center justify-between bg-gray-100 p-2 rounded-lg text-sm"><span>${item.quantity} x ${item.name}</span>${order.status === 'Received' ? `<button onclick="cancelOrderItem('${order.id}')" class="text-red-500 font-bold text-lg">&times;</button>` : ''}</div>`).join('');
                 const statusColors = { 'Received': 'bg-orange-100 text-orange-800', 'Preparing': 'bg-blue-100 text-blue-800', 'Ready': 'bg-green-100 text-green-800', 'Cancelled': 'bg-red-100 text-red-800' };
                 const actionsHtml = order.status === 'Received' ? `<div class="flex gap-2 mt-4"><button onclick="editOrder('${order.id}')" class="text-xs bg-blue-100 text-blue-700 font-semibold px-3 py-1 rounded-full">Edit</button><button onclick="openCancelConfirmModal('${order.id}')" class="text-xs bg-red-100 text-red-700 font-semibold px-3 py-1 rounded-full">Cancel</button></div>` : '';
                 
@@ -562,7 +710,7 @@
         }
 
         function confirmCancelOrder(orderId) {
-            const order = kot.find(o => o.id === orderId);
+            const order = appData[currentRestaurantId].kot.find(o => o.id === orderId);
             if (order && order.status === 'Received') {
                 order.status = 'Cancelled';
                 renderMyOrders();
@@ -571,7 +719,7 @@
         }
         
         function cancelOrderItem(orderId, itemId) {
-            const order = kot.find(o => o.id === orderId);
+            const order = appData[currentRestaurantId].kot.find(o => o.id === orderId);
             if (order && order.status === 'Received') {
                 order.items = order.items.filter(item => item.id !== itemId);
                 if (order.items.length === 0) {
@@ -586,7 +734,7 @@
         }
         
         function updateChefNote(orderId, newMessage) {
-            const order = kot.find(o => o.id === orderId);
+            const order = appData[currentRestaurantId].kot.find(o => o.id === orderId);
             if (order && order.status === 'Received') {
                 order.message = newMessage;
             }
@@ -595,6 +743,7 @@
         // --- KOT PAGE LOGIC ---
         function renderKOT() {
             kotList.innerHTML = '';
+            const kot = appData[currentRestaurantId].kot;
             const activeKots = kot.filter(o => o.status === 'Received' || o.status === 'Preparing');
             if (activeKots.length === 0) {
                 kotList.innerHTML = `<div class="glass-panel rounded-2xl p-8 text-center col-span-full"><p class="text-gray-600">No active orders.</p></div>`;
@@ -609,7 +758,7 @@
         }
         
         function startPreparing(orderId) {
-            const order = kot.find(o => o.id === orderId);
+            const order = appData[currentRestaurantId].kot.find(o => o.id === orderId);
             if (order && order.status === 'Received') {
                 order.status = 'Preparing';
                 order.expectedReadyTime = new Date(Date.now() + order.totalPrepTime * 60000);
@@ -618,7 +767,7 @@
         }
         
         function markAsReady(orderId) {
-            const order = kot.find(o => o.id === orderId);
+            const order = appData[currentRestaurantId].kot.find(o => o.id === orderId);
             if (order && order.status === 'Preparing') {
                 order.status = 'Ready';
                 renderKOT();
@@ -651,7 +800,7 @@
                 document.querySelectorAll('.kot-card').forEach(c => c.classList.remove('dragging', 'drag-over'));
                 return;
             }
-            
+            const kot = appData[currentRestaurantId].kot;
             const draggedOrderIndex = kot.findIndex(o => o.id === draggedId);
             const targetOrderIndex = kot.findIndex(o => o.id === targetCard.dataset.orderId);
 
@@ -664,8 +813,10 @@
 
         // --- KITCHEN SIMULATION & ETA UPDATE ---
         setInterval(() => {
+            if (!currentRestaurantId) return;
             const now = Date.now();
             let statusChanged = false;
+            const kot = appData[currentRestaurantId].kot;
             kot.forEach(order => {
                 if(order.status === 'Preparing' && now > order.expectedReadyTime) {
                     order.status = 'Ready';
@@ -673,29 +824,159 @@
                 }
             });
 
-            if (document.getElementById('my-orders-page').classList.contains('hidden') === false) {
+            if (document.getElementById('my-orders-page').offsetParent !== null) {
                  renderMyOrders();
             }
-            if(statusChanged) {
+            if(statusChanged && document.getElementById('kot-page').offsetParent !== null) {
                 renderKOT();
             }
         }, 1000);
 
         // --- ADMIN TABLE LOGIC ---
-        function renderAdminTable() { if (!tableBody) return; tableBody.innerHTML = ''; menu.forEach(item => { const isSelected = selectedItems.includes(item.id); const row = document.createElement('tr'); row.id = `item-${item.id}`; row.className = `table-row border-b border-gray-200 transition-colors ${isSelected ? 'selected' : ''}`; row.innerHTML = `<td class="p-4"><input type="checkbox" onchange="toggleItemSelection(${item.id})" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${isSelected ? 'checked' : ''}></td><td class="p-4"><div class="relative w-12 h-12">${item.image ? `<img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-md object-cover" onerror="this.onerror=null;this.src='https://placehold.co/100x100/e2e8f0/2d3748?text=Error';">` : `<div class="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Img</div>`}<div id="spinner-${item.id}" class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-md hidden"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div></div></td><td class="p-4 font-semibold text-gray-800">${item.name}</td><td class="p-4 text-gray-600 max-w-xs truncate" title="${item.description}">${item.description}</td><td class="p-4 text-gray-600">${item.prepTime} min</td><td class="p-4 font-semibold text-blue-600">₹${item.price}</td><td class="p-4 text-center"><div class="flex items-center justify-center gap-4"><button onclick="openEditModal(${item.id})" class="text-gray-500 hover:text-blue-600" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button onclick="openDeleteConfirmModal([${item.id}])" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></td>`; tableBody.appendChild(row); }); updateSelectAllCheckbox(); }
+        function renderAdminTable() { 
+            if (!tableBody || !currentRestaurantId) return; 
+            const menu = appData[currentRestaurantId].menu;
+            tableBody.innerHTML = ''; 
+            menu.forEach(item => { const isSelected = selectedItems.includes(item.id); const row = document.createElement('tr'); row.id = `item-${item.id}`; row.className = `table-row border-b border-gray-200 transition-colors ${isSelected ? 'selected' : ''}`; row.innerHTML = `<td class="p-4"><input type="checkbox" onchange="toggleItemSelection(${item.id})" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${isSelected ? 'checked' : ''}></td><td class="p-4"><div class="relative w-12 h-12">${item.image ? `<img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-md object-cover" onerror="this.onerror=null;this.src='https://placehold.co/100x100/e2e8f0/2d3748?text=Error';">` : `<div class="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Img</div>`}<div id="spinner-${item.id}" class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-md hidden"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div></div></td><td class="p-4 font-semibold text-gray-800">${item.name}</td><td class="p-4 text-gray-600 max-w-xs truncate" title="${item.description}">${item.description}</td><td class="p-4 text-gray-600">${item.prepTime} min</td><td class="p-4 font-semibold text-blue-600">₹${item.price}</td><td class="p-4 text-center"><div class="flex items-center justify-center gap-4"><button onclick="openEditModal(${item.id})" class="text-gray-500 hover:text-blue-600" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button onclick="openDeleteConfirmModal([${item.id}])" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></td>`; tableBody.appendChild(row); }); updateSelectAllCheckbox(); }
         function toggleItemSelection(itemId) { if (selectedItems.includes(itemId)) { selectedItems = selectedItems.filter(id => id !== itemId); } else { selectedItems.push(itemId); } renderAdminTable(); updateActionButtons(); }
-        function toggleSelectAll(isChecked) { selectedItems = isChecked ? menu.map(item => item.id) : []; renderAdminTable(); updateActionButtons(); }
-        function updateSelectAllCheckbox() { if(selectAllCheckbox) { selectAllCheckbox.checked = menu.length > 0 && selectedItems.length === menu.length; } }
+        function toggleSelectAll(isChecked) { const menu = appData[currentRestaurantId].menu; selectedItems = isChecked ? menu.map(item => item.id) : []; renderAdminTable(); updateActionButtons(); }
+        function updateSelectAllCheckbox() { if(selectAllCheckbox) { const menu = appData[currentRestaurantId].menu; selectAllCheckbox.checked = menu.length > 0 && selectedItems.length === menu.length; } }
         function updateActionButtons() { if(deleteSelectedBtn) { deleteSelectedBtn.classList.toggle('hidden', selectedItems.length === 0); aiDescSelectedBtn.classList.toggle('hidden', selectedItems.length < 1); aiImgSelectedBtn.classList.toggle('hidden', selectedItems.length < 1); } }
-        function openEditModal(itemId = null) { editItemForm.reset(); const isNew = itemId === null; editModalTitle.textContent = isNew ? 'Add New Item' : 'Edit Menu Item'; document.getElementById('editItemId').value = isNew ? '' : itemId; if (!isNew) { const item = menu.find(i => i.id === itemId); if (!item) return; document.getElementById('editItemName').value = item.name; document.getElementById('editItemDesc').value = item.description; document.getElementById('editItemPrepTime').value = item.prepTime; document.getElementById('editItemPrice').value = item.price; document.getElementById('editItemImage').value = item.image; updateImagePreview(item.image); } else { updateImagePreview(''); } editModal.classList.remove('hidden'); }
+        function openEditModal(itemId = null) { editItemForm.reset(); const isNew = itemId === null; editModalTitle.textContent = isNew ? 'Add New Item' : 'Edit Menu Item'; document.getElementById('editItemId').value = isNew ? '' : itemId; if (!isNew) { const item = appData[currentRestaurantId].menu.find(i => i.id === itemId); if (!item) return; document.getElementById('editItemName').value = item.name; document.getElementById('editItemDesc').value = item.description; document.getElementById('editItemPrepTime').value = item.prepTime; document.getElementById('editItemPrice').value = item.price; document.getElementById('editItemImage').value = item.image; updateImagePreview(item.image); } else { updateImagePreview(''); } editModal.classList.remove('hidden'); }
         function closeEditModal() { editModal.classList.add('hidden'); }
-        editItemForm.addEventListener('submit', function(e) { e.preventDefault(); const itemId = parseInt(document.getElementById('editItemId').value); const itemData = { name: document.getElementById('editItemName').value, description: document.getElementById('editItemDesc').value, prepTime: parseInt(document.getElementById('editItemPrepTime').value), price: parseInt(document.getElementById('editItemPrice').value), image: document.getElementById('editItemImage').value, tags: {} }; if (itemId) { const itemIndex = menu.findIndex(i => i.id === itemId); if (itemIndex > -1) { menu[itemIndex] = { ...menu[itemIndex], ...itemData }; } } else { itemData.id = Date.now(); menu.push(itemData); } closeEditModal(); renderAdminTable(); });
+        editItemForm.addEventListener('submit', function(e) { e.preventDefault(); const itemId = parseInt(document.getElementById('editItemId').value); const itemData = { name: document.getElementById('editItemName').value, description: document.getElementById('editItemDesc').value, prepTime: parseInt(document.getElementById('editItemPrepTime').value), price: parseInt(document.getElementById('editItemPrice').value), image: document.getElementById('editItemImage').value, tags: {} }; const menu = appData[currentRestaurantId].menu; if (itemId) { const itemIndex = menu.findIndex(i => i.id === itemId); if (itemIndex > -1) { menu[itemIndex] = { ...menu[itemIndex], ...itemData }; } } else { itemData.id = Date.now(); menu.push(itemData); } closeEditModal(); renderAdminTable(); });
         function openDeleteConfirmModal(idsToDelete = null) { itemsToDelete = idsToDelete || selectedItems; if (itemsToDelete.length === 0) return; document.getElementById('delete-count').textContent = itemsToDelete.length; deleteConfirmModal.classList.remove('hidden'); }
         function closeDeleteConfirmModal() { itemsToDelete = []; deleteConfirmModal.classList.add('hidden'); }
-        function deleteItems() { menu = menu.filter(item => !itemsToDelete.includes(item.id)); selectedItems = selectedItems.filter(id => !itemsToDelete.includes(id)); closeDeleteConfirmModal(); renderAdminTable(); updateActionButtons(); }
+        function deleteItems() { const menu = appData[currentRestaurantId].menu; appData[currentRestaurantId].menu = menu.filter(item => !itemsToDelete.includes(item.id)); selectedItems = selectedItems.filter(id => !itemsToDelete.includes(id)); closeDeleteConfirmModal(); renderAdminTable(); updateActionButtons(); }
         function updateImagePreview(src) { if (src) { imagePreview.src = src; imagePreview.classList.remove('hidden'); imagePlaceholder.classList.add('hidden'); } else { imagePreview.classList.add('hidden'); imagePlaceholder.classList.remove('hidden'); } }
         function handleImageUpload(event) { const file = event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const imageUrl = e.target.result; document.getElementById('editItemImage').value = imageUrl; updateImagePreview(imageUrl); }; reader.readAsDataURL(file); } }
         
+        // --- USER MANAGEMENT LOGIC ---
+        function renderUserTable() {
+            const restaurant = restaurants.find(r => r.id === managingUsersForRestaurantId);
+            userManagementTitle.textContent = `Users for ${restaurant.name}`;
+            userTableBody.innerHTML = '';
+            const restaurantUsers = users.filter(u => u.restaurantId === managingUsersForRestaurantId);
+            restaurantUsers.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'table-row border-b border-gray-200';
+                row.innerHTML = `
+                    <td class="p-4 font-semibold text-gray-800">${user.email}</td>
+                    <td class="p-4 text-gray-600 capitalize">${user.role}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-4">
+                            <button onclick="openUserEditModal(${user.id})" class="text-gray-500 hover:text-blue-600" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <button onclick="deleteUser(${user.id})" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                        </div>
+                    </td>`;
+                userTableBody.appendChild(row);
+            });
+        }
+        function openUserEditModal(userId = null) {
+            userEditForm.reset();
+            const isNew = userId === null;
+            userEditModalTitle.textContent = isNew ? 'Add New User' : 'Edit User';
+            document.getElementById('editUserId').value = isNew ? '' : userId;
+            if (!isNew) {
+                const user = users.find(u => u.id === userId);
+                if (!user) return;
+                document.getElementById('editUserEmail').value = user.email;
+                document.getElementById('editUserPassword').value = user.password;
+                document.getElementById('editUserRole').value = user.role;
+            }
+            userEditModal.classList.remove('hidden');
+        }
+        function closeUserEditModal() {
+            userEditModal.classList.add('hidden');
+        }
+        userEditForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userId = parseInt(document.getElementById('editUserId').value);
+            const userData = {
+                email: document.getElementById('editUserEmail').value,
+                password: document.getElementById('editUserPassword').value,
+                role: document.getElementById('editUserRole').value,
+                restaurantId: managingUsersForRestaurantId
+            };
+            if (userId) {
+                const userIndex = users.findIndex(u => u.id === userId);
+                if (userIndex > -1) {
+                    users[userIndex] = { ...users[userIndex], ...userData };
+                }
+            } else {
+                userData.id = Date.now();
+                users.push(userData);
+            }
+            closeUserEditModal();
+            renderUserTable();
+        });
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                users = users.filter(u => u.id !== userId);
+                renderUserTable();
+            }
+        }
+
+        // --- RESTAURANT MANAGEMENT LOGIC ---
+        function renderRestaurantTable() {
+            restaurantTableBody.innerHTML = '';
+            restaurants.forEach(resto => {
+                const row = document.createElement('tr');
+                row.className = 'table-row border-b border-gray-200';
+                row.innerHTML = `
+                    <td class="p-4 font-semibold text-gray-800">${resto.name}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-4">
+                            <button onclick="showPage('user-management-page', ${resto.id})" class="text-sm bg-gray-200 px-3 py-1 rounded-full font-semibold">Manage Users</button>
+                            <button onclick="openRestaurantEditModal(${resto.id})" class="text-gray-500 hover:text-blue-600" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <button onclick="deleteRestaurant(${resto.id})" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                        </div>
+                    </td>`;
+                restaurantTableBody.appendChild(row);
+            });
+        }
+        function openRestaurantEditModal(restoId = null) {
+            restaurantEditForm.reset();
+            const isNew = restoId === null;
+            restaurantEditModalTitle.textContent = isNew ? 'Add New Restaurant' : 'Edit Restaurant';
+            document.getElementById('editRestaurantId').value = isNew ? '' : restoId;
+            if (!isNew) {
+                const resto = restaurants.find(r => r.id === restoId);
+                if (resto) document.getElementById('editRestaurantName').value = resto.name;
+            }
+            restaurantEditModal.classList.remove('hidden');
+        }
+        function closeRestaurantEditModal() {
+            restaurantEditModal.classList.add('hidden');
+        }
+        restaurantEditForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const restoId = parseInt(document.getElementById('editRestaurantId').value);
+            const restoName = document.getElementById('editRestaurantName').value;
+            if (restoId) {
+                const restoIndex = restaurants.findIndex(r => r.id === restoId);
+                if (restoIndex > -1) restaurants[restoIndex].name = restoName;
+            } else {
+                const newId = Date.now();
+                restaurants.push({ id: newId, name: restoName });
+                appData[newId] = { menu: [], kot: [] }; // Initialize data for new restaurant
+            }
+            closeRestaurantEditModal();
+            renderRestaurantTable();
+        });
+        function deleteRestaurant(restoId) {
+            if (confirm('Are you sure you want to delete this restaurant and all its users? This cannot be undone.')) {
+                restaurants = restaurants.filter(r => r.id !== restoId);
+                users = users.filter(u => u.restaurantId !== restoId);
+                delete appData[restoId];
+                renderRestaurantTable();
+            }
+        }
+
         // --- CHAT AGENT LOGIC ---
         function openChatAgent() {
             chatAgentModal.classList.remove('hidden');
@@ -727,7 +1008,8 @@
             appendUserMessage(userMessage);
             chatInput.value = '';
             showAgentTyping();
-
+            
+            const menu = appData[currentRestaurantId].menu;
             const prompt = `You are a helpful restaurant food recommender. A customer has the following request: "${userMessage}". Based on our menu, which is provided here as a JSON object, please suggest 1-3 suitable dishes. Explain why you are recommending them. Be friendly and conversational. Here is the menu: ${JSON.stringify(menu)}`;
             
             try {
@@ -751,9 +1033,10 @@
         async function fetchWithBackoff(apiUrl, payload) { let delay = 1000; for (let i = 0; i < 5; i++) { try { const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (response.ok) return response.json(); } catch (error) { /* Ignore network errors for retry */ } await new Promise(resolve => setTimeout(resolve, delay)); delay *= 2; } throw new Error("API request failed after multiple retries."); }
         async function generateAiDescription() { const dishName = document.getElementById('editItemName').value; const btn = document.getElementById('ai-generate-desc-btn'); if (!dishName) { showToast("Please enter a dish name first.", 'error'); return; } btn.classList.add('loading'); btn.disabled = true; try { const prompt = `Generate a short, appetizing menu description for a dish called '${dishName}'. Keep it under 20 words.`; const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] }; const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; const result = await fetchWithBackoff(apiUrl, payload); if (result.candidates && result.candidates[0].content.parts[0].text) { document.getElementById('editItemDesc').value = result.candidates[0].content.parts[0].text.trim(); } else { throw new Error("No description generated."); } } catch (error) { showToast("Failed to generate description.", 'error'); } finally { btn.classList.remove('loading'); btn.disabled = false; } }
         async function generateAiImage() { const dishName = document.getElementById('editItemName').value; const btn = document.getElementById('ai-generate-image-btn'); if (!dishName) { showToast("Please enter a dish name first.", 'error'); return; } btn.classList.add('loading'); btn.disabled = true; imagePreviewContainer.classList.add('loading'); try { const prompt = `A photorealistic, professional food photography shot of '${dishName}', beautifully plated on a clean white background, ready for a restaurant menu.`; const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } }; const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`; const result = await fetchWithBackoff(apiUrl, payload); if (result.predictions && result.predictions[0].bytesBase64Encoded) { const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`; document.getElementById('editItemImage').value = imageUrl; updateImagePreview(imageUrl); } else { throw new Error("No image generated."); } } catch (error) { showToast("Failed to generate image.", 'error'); } finally { btn.classList.remove('loading'); btn.disabled = false; imagePreviewContainer.classList.remove('loading'); } }
-        async function generateAiForAllSelectedDescriptions() { for (const itemId of selectedItems) { const item = menu.find(i => i.id === itemId); if (item) { try { const prompt = `Generate a short, appetizing menu description for a dish called '${item.name}'. Keep it under 20 words.`; const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] }; const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; const result = await fetchWithBackoff(apiUrl, payload); if (result.candidates && result.candidates[0].content.parts[0].text) { item.description = result.candidates[0].content.parts[0].text.trim(); } } catch (e) { /* ignore individual failures */ } } } renderAdminTable(); showToast('AI descriptions generated for selected items.'); }
+        async function generateAiForAllSelectedDescriptions() { const menu = appData[currentRestaurantId].menu; for (const itemId of selectedItems) { const item = menu.find(i => i.id === itemId); if (item) { try { const prompt = `Generate a short, appetizing menu description for a dish called '${item.name}'. Keep it under 20 words.`; const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] }; const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; const result = await fetchWithBackoff(apiUrl, payload); if (result.candidates && result.candidates[0].content.parts[0].text) { item.description = result.candidates[0].content.parts[0].text.trim(); } } catch (e) { /* ignore individual failures */ } } } renderAdminTable(); showToast('AI descriptions generated for selected items.'); }
         async function generateAiForAllSelectedImages() {
             const selectedIds = [...selectedItems];
+            const menu = appData[currentRestaurantId].menu;
             if (selectedIds.length === 0) return;
             selectedIds.forEach(id => { const spinner = document.querySelector(`#item-${id} #spinner-${id}`); if (spinner) spinner.classList.remove('hidden'); });
             const generationPromises = selectedIds.map(async (itemId) => {
@@ -795,17 +1078,21 @@
             mainAppContainer.classList.remove('hidden');
             document.body.classList.remove('items-center', 'justify-center', 'min-h-screen');
 
-
-            if (isUserAdmin) {
+            // Hide/show nav links based on role
+            if (isSuperUser) {
+                document.getElementById('nav-restaurant-management').classList.remove('hidden');
+                showPage('restaurant-management-page');
+            } else if (isUserAdmin) {
                 document.getElementById('nav-admin').classList.remove('hidden');
                 document.getElementById('nav-kot').classList.remove('hidden');
+                document.getElementById('nav-user-management').classList.remove('hidden');
                 showPage('admin-page');
                 renderAdminTable();
-            } else {
+            } else { // Customer
                 showPage('menu-page');
+                renderFilters();
+                renderCustomerMenu();
             }
-            renderFilters();
-            renderCustomerMenu();
         };
     </script>
 </body>
