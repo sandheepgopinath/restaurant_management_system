@@ -325,25 +325,19 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, getDocs, onSnapshot, doc, addDoc, setDoc, deleteDoc, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, onSnapshot, doc, addDoc, setDoc, deleteDoc, query, where, orderBy, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-      // Import the functions you need from the SDKs you need
-        import { initializeApp } from "firebase/app";
-        import { getAnalytics } from "firebase/analytics";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-        
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        // --- STEP 1: PASTE YOUR FIREBASE CONFIG HERE ---
         const firebaseConfig = {
-          apiKey: "AIzaSyCmQD17ioAGRE-Do19EUR4fOHRRQ0BcYcU",
-          authDomain: "restaurant-management-sy-eca0a.firebaseapp.com",
-          projectId: "restaurant-management-sy-eca0a",
-          storageBucket: "restaurant-management-sy-eca0a.firebasestorage.app",
-          messagingSenderId: "637956283200",
-          appId: "1:637956283200:web:94b391036383993a6bb8a5",
-          measurementId: "G-385MLNC7R3"
+            apiKey: "AIzaSyCmQD17ioAGRE-Do19EUR4fOHRRQ0BcYcU",
+            authDomain: "restaurant-management-sy-eca0a.firebaseapp.com",
+            projectId: "restaurant-management-sy-eca0a",
+            storageBucket: "restaurant-management-sy-eca0a.firebasestorage.app",
+            messagingSenderId: "637956283200",
+            appId: "1:637956283200:web:94b391036383993a6bb8a5",
+            measurementId: "G-385MLNC7R3"
         };
+        
         
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -369,7 +363,7 @@
         let currentFilters = { hunger: null, cuisine: null, type: null, taste: null };
         let standardMenuView = false;
 
-        // --- DOM Elements (shortened for brevity) ---
+        // --- DOM Elements ---
         const loginPage = document.getElementById('login-page');
         const loginForm = document.getElementById('login-form');
         const loginError = document.getElementById('login-error');
@@ -384,26 +378,84 @@
         const kotList = document.getElementById('kot-list');
         const userManagementTitle = document.getElementById('user-management-title');
         
+        // --- RENDER FUNCTIONS (Defined early to avoid ReferenceError) ---
+        function renderRestaurantTable() {
+            restaurantTableBody.innerHTML = '';
+            localRestaurants.forEach(resto => {
+                const row = document.createElement('tr');
+                row.className = 'table-row border-b border-gray-200';
+                row.innerHTML = `
+                    <td class="p-4 font-semibold text-gray-800">${resto.name}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-4">
+                            <button onclick="showPage('user-management-page', '${resto.id}')" class="text-sm bg-gray-200 px-3 py-1 rounded-full font-semibold">Manage Users</button>
+                            <button onclick="openRestaurantEditModal('${resto.id}')" class="text-gray-500 hover:text-blue-600" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <button onclick="deleteRestaurant('${resto.id}')" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                        </div>
+                    </td>`;
+                restaurantTableBody.appendChild(row);
+            });
+        }
+        
+        function renderUserTable() {
+            const restaurant = localRestaurants.find(r => r.id === managingUsersForRestaurantId);
+            userManagementTitle.textContent = restaurant ? `Users for ${restaurant.name}` : 'User Management';
+            userTableBody.innerHTML = '';
+            const restaurantUsers = localUsers.filter(u => u.restaurantId === managingUsersForRestaurantId);
+            restaurantUsers.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'table-row border-b border-gray-200';
+                row.innerHTML = `
+                    <td class="p-4 font-semibold text-gray-800">${user.email}</td>
+                    <td class="p-4 text-gray-600 capitalize">${user.role}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-4">
+                            <button onclick="openUserEditModal('${user.id}')" class="text-gray-500 hover:text-blue-600" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <button onclick="deleteUser('${user.id}')" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                        </div>
+                    </td>`;
+                userTableBody.appendChild(row);
+            });
+        }
+        
+        function renderAdminTable() { 
+            if (!tableBody || !currentRestaurantId) return; 
+            const menu = localMenu;
+            tableBody.innerHTML = ''; 
+            menu.forEach(item => { const isSelected = selectedItems.includes(item.id); const row = document.createElement('tr'); row.id = `item-${item.id}`; row.className = `table-row border-b border-gray-200 transition-colors ${isSelected ? 'selected' : ''}`; row.innerHTML = `<td class="p-4"><input type="checkbox" onchange="toggleItemSelection('${item.id}')" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${isSelected ? 'checked' : ''}></td><td class="p-4"><div class="relative w-12 h-12">${item.image ? `<img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-md object-cover" onerror="this.onerror=null;this.src='https://placehold.co/100x100/e2e8f0/2d3748?text=Error';">` : `<div class="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Img</div>`}<div id="spinner-${item.id}" class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-md hidden"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div></div></td><td class="p-4 font-semibold text-gray-800">${item.name}</td><td class="p-4 text-gray-600 max-w-xs truncate" title="${item.description}">${item.description}</td><td class="p-4 text-gray-600">${item.prepTime} min</td><td class="p-4 font-semibold text-blue-600">₹${item.price}</td><td class="p-4 text-center"><div class="flex items-center justify-center gap-4"><button onclick="openEditModal('${item.id}')" class="text-gray-500 hover:text-blue-600" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button onclick="openDeleteConfirmModal(['${item.id}'])" class="text-gray-500 hover:text-red-600" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></td>`; tableBody.appendChild(row); }); updateSelectAllCheckbox(); }
+
         // --- LOGIN LOGIC ---
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            loginError.classList.add('hidden');
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("email", "==", email), where("password", "==", password));
-            const querySnapshot = await getDocs(q);
+            try {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("email", "==", email), where("password", "==", password));
+                const querySnapshot = await getDocs(q);
 
-            if (!querySnapshot.empty) {
-                const userDoc = querySnapshot.docs[0];
-                const user = { id: userDoc.id, ...userDoc.data() };
-                
-                isUserAdmin = user.role === 'admin';
-                isSuperUser = user.email === 'superuser@tenantadmin.sgs.com';
-                currentUserId = user.id;
-                currentRestaurantId = user.restaurantId;
-                initializeApp();
-            } else {
+                if (!querySnapshot.empty) {
+                    const userDoc = querySnapshot.docs[0];
+                    const user = { id: userDoc.id, ...userDoc.data() };
+                    
+                    isUserAdmin = user.role === 'admin';
+                    isSuperUser = user.email === 'superuser@tenantadmin.sgs.com';
+                    currentUserId = user.id;
+                    currentRestaurantId = user.restaurantId;
+                    startApp();
+                } else {
+                    loginError.textContent = "Invalid email or password.";
+                    loginError.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Login Error:", error);
+                loginError.textContent = "Could not connect to the database. Please try again later.";
                 loginError.classList.remove('hidden');
             }
         });
@@ -638,7 +690,7 @@
         document.getElementById('restaurant-edit-form').addEventListener('submit', saveRestaurant);
 
         // --- INITIALIZATION ---
-        function initializeApp() {
+        function startApp() {
             loginPage.classList.add('hidden');
             mainAppContainer.classList.remove('hidden');
             document.body.classList.remove('items-center', 'justify-center', 'min-h-screen');
@@ -664,11 +716,51 @@
             }
         };
 
+        // --- DATABASE SEEDING (ONE-TIME USE) ---
+        async function seedDatabase() {
+            const usersRef = collection(db, "users");
+            const snapshot = await getDocs(usersRef);
+            if (!snapshot.empty) {
+                console.log("Database already seeded.");
+                return;
+            }
+
+            console.log("Seeding database...");
+            const batch = writeBatch(db);
+
+            // Create Restaurants
+            const resto1Ref = doc(collection(db, "restaurants"));
+            batch.set(resto1Ref, { name: 'SGS Grand Restaurant' });
+
+            const resto2Ref = doc(collection(db, "restaurants"));
+            batch.set(resto2Ref, { name: 'The Corner Bistro' });
+
+            // Create Users
+            const superUserRef = doc(collection(db, "users"));
+            batch.set(superUserRef, { email: 'superuser@tenantadmin.sgs.com', password: 'sgs123', role: 'admin', restaurantId: null });
+            
+            const customer1Ref = doc(collection(db, "users"));
+            batch.set(customer1Ref, { email: 'customer@test.com', password: 'password', role: 'customer', restaurantId: resto1Ref.id });
+
+            const admin1Ref = doc(collection(db, "users"));
+            batch.set(admin1Ref, { email: 'admin@sgsgrand.com', password: 'password', role: 'admin', restaurantId: resto1Ref.id });
+            
+            const customer2Ref = doc(collection(db, "users"));
+            batch.set(customer2Ref, { email: 'user@bistro.com', password: 'password', role: 'customer', restaurantId: resto2Ref.id });
+
+            // Commit the batch
+            await batch.commit();
+            console.log("Database seeded successfully!");
+        }
+
+        // ONE-TIME-USE: Uncomment the line below, run the app once, then re-comment it.
+        // seedDatabase(); 
+
         // Make some functions globally accessible from HTML onclick
         window.showPage = showPage;
-        window.openRestaurantEditModal = openRestaurantEditModal;
+        window.openRestaurantEditModal = () => document.getElementById('restaurant-edit-modal').classList.remove('hidden');
         window.closeRestaurantEditModal = () => document.getElementById('restaurant-edit-modal').classList.add('hidden');
-        window.openUserEditModal = openUserEditModal;
+        window.openUserEditModal = () => document.getElementById('user-edit-modal').classList.remove('hidden');
         window.closeUserEditModal = () => document.getElementById('user-edit-modal').classList.add('hidden');
         window.deleteRestaurant = deleteRestaurant;
         window.deleteUser = deleteUser;
